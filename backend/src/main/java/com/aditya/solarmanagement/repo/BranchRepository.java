@@ -17,6 +17,7 @@ import com.aditya.solarmanagement.models.Branch;
 public interface BranchRepository extends JpaRepository<Branch, Long>, JpaSpecificationExecutor<Branch> {
 	List<Branch> findAllByCompanyId(Long companyId);
 	long countByCompanyId(Long companyId);
+	boolean existsByCompanyId(Long companyId);
 	boolean existsByCompanyIdAndNameIgnoreCaseAndIdNot(Long companyId, String name, Long id);
 
 	@Query("select b.company.id, count(b.id) from Branch b where b.company.id in :companyIds group by b.company.id")

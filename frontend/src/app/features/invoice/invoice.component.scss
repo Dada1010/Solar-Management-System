@@ -31,6 +31,10 @@
 .preview-values strong { color: #315548; font-size: 12px; }
 .directory-heading { display: flex; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #e9eee8; color: #516b5f; font-size: 10px; letter-spacing: 1px; }
 .directory-heading span { color: #87958e; letter-spacing: 0; }
+.invoice-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #e9eee8; }
+.invoice-filters label { display: grid; flex: 1 1 180px; gap: 6px; color: #3b544a; font-size: 11px; font-weight: 700; }
+.invoice-filters input, .invoice-filters select { width: 100%; min-height: 36px; font-size: 11px; }
+.invoice-filters select { padding: 0 10px; border: 1px solid #d6dfd6; border-radius: 6px; background: #fff; color: #29463a; font: inherit; font-size: 11px; }
 .empty-cell { padding: 34px !important; color: #84928a; text-align: center; }
 .loading-panel { min-height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border: 1px solid #e1e8df; border-radius: 8px; color: #698074; background: white; font-size: 12px; }
 .invoice-history { margin-bottom: 20px; }
@@ -46,7 +50,8 @@
 .payment-summary strong { color: #254b3d; font-size: 13px; }
 .payment-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 10px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #e2e8e1; }
 .payment-form label { display: grid; gap: 6px; color: #3b544a; font-size: 10px; font-weight: 700; }
-.payment-form input { width: 100%; }
+.payment-form input, .payment-form select { width: 100%; min-height: 36px; }
+.payment-form select { padding: 0 10px; border: 1px solid #d6dfd6; border-radius: 6px; background: #fff; color: #29463a; font: inherit; }
 .payment-loading { padding: 18px 0; color: #718279; font-size: 11px; text-align: center; }
 .invoice-print { display: none; }
 .print-header { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 18px; border-bottom: 2px solid #244c3d; }

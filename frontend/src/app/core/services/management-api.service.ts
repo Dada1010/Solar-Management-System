@@ -8,6 +8,7 @@ import {
   BranchRecord,
   CompanyPayload,
   CompanyRecord,
+  DashboardRecord,
   EmployeePayload,
   EmployeeRecord,
   EmployeeType,
@@ -16,6 +17,7 @@ import {
   EffectiveRateRecord,
   InvoicePaymentPayload,
   InvoicePaymentRecord,
+  InvoiceFilters,
   MsedclDetailPayload,
   MsedclDetailRecord,
   MsedclInvoicePayload,
@@ -34,6 +36,10 @@ export class ManagementApiService {
     return this.getPage('/companies', page, size);
   }
 
+  dashboard(): Observable<DashboardRecord> {
+    return this.get('/dashboard');
+  }
+
   company(id: number): Observable<CompanyRecord> {
     return this.get(`/companies/${id}`);
   }
@@ -44,6 +50,10 @@ export class ManagementApiService {
 
   updateCompany(id: number, payload: CompanyPayload): Observable<CompanyRecord> {
     return this.put(`/companies/${id}`, payload);
+  }
+
+  deleteCompany(id: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/companies/${id}`).pipe(map(unwrap));
   }
 
   branches(page = 0, size = 20, name?: string): Observable<PageResult<BranchRecord>> {
@@ -66,6 +76,10 @@ export class ManagementApiService {
     return this.put(`/branches/${id}`, payload);
   }
 
+  deleteBranch(id: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/branches/${id}`).pipe(map(unwrap));
+  }
+
   employees(page = 0, size = 20, name?: string): Observable<PageResult<EmployeeRecord>> {
     return this.getPage('/employees', page, size, name);
   }
@@ -86,6 +100,10 @@ export class ManagementApiService {
     return this.put(`/employees/${id}`, payload);
   }
 
+  deleteEmployee(id: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/employees/${id}`).pipe(map(unwrap));
+  }
+
   customerMsedclDetails(customerId: number): Observable<MsedclDetailRecord[]> {
     return this.get(`/employees/${customerId}/msedcl-details`);
   }
@@ -98,8 +116,16 @@ export class ManagementApiService {
     return this.http.get<ApiResponse<MsedclDetailRecord[]>>(`${this.baseUrl}/consumer-details`, { params }).pipe(map(unwrap));
   }
 
-  invoices(): Observable<MsedclInvoiceRecord[]> {
-    return this.get('/invoices');
+  invoices(filters?: InvoiceFilters): Observable<MsedclInvoiceRecord[]> {
+    let params = new HttpParams();
+    if (filters?.invoiceNo?.trim()) params = params.set('invoiceNo', filters.invoiceNo.trim());
+    if (filters?.consumerName?.trim()) params = params.set('consumerName', filters.consumerName.trim());
+    if (filters?.consumerNo?.trim()) params = params.set('consumerNo', filters.consumerNo.trim());
+    if (filters?.paymentStatus) params = params.set('paymentStatus', filters.paymentStatus);
+    if (filters?.invoiceStatus) params = params.set('invoiceStatus', filters.invoiceStatus);
+    if (filters?.invoiceDateFrom) params = params.set('invoiceDateFrom', filters.invoiceDateFrom);
+    if (filters?.invoiceDateTo) params = params.set('invoiceDateTo', filters.invoiceDateTo);
+    return this.http.get<ApiResponse<MsedclInvoiceRecord[]>>(`${this.baseUrl}/invoices`, { params }).pipe(map(unwrap));
   }
 
   paymentDetails(): Observable<InvoicePaymentRecord[]> {
@@ -114,12 +140,20 @@ export class ManagementApiService {
     return this.post('/invoices', payload);
   }
 
+  cancelInvoice(invoiceId: number): Observable<void> {
+    return this.post(`/invoices/${invoiceId}/cancel`, {});
+  }
+
   invoicePayments(invoiceId: number): Observable<InvoicePaymentRecord[]> {
     return this.get(`/invoices/${invoiceId}/payments`);
   }
 
   addInvoicePayment(invoiceId: number, payload: InvoicePaymentPayload): Observable<InvoicePaymentRecord[]> {
     return this.post(`/invoices/${invoiceId}/payments`, payload);
+  }
+
+  cancelInvoicePayment(invoiceId: number, paymentId: number): Observable<void> {
+    return this.post(`/invoices/${invoiceId}/payments/${paymentId}/cancel`, {});
   }
 
   uploadInvoiceMsebBill(invoiceId: number, file: File): Observable<MsedclInvoiceRecord> {

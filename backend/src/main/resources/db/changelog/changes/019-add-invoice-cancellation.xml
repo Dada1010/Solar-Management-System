@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="019-add-invoice-cancellation" author="aditya">
+		<addColumn tableName="msedcl_invoices">
+			<column name="invoice_status" type="VARCHAR(20)"/>
+			<column name="reversal_of_invoice_id" type="BIGINT"/>
+			<column name="original_invoice_no_snapshot" type="VARCHAR(160)"/>
+		</addColumn>
+		<update tableName="msedcl_invoices">
+			<column name="invoice_status" value="OPEN"/>
+		</update>
+		<addNotNullConstraint tableName="msedcl_invoices" columnName="invoice_status" columnDataType="VARCHAR(20)"/>
+		<addForeignKeyConstraint baseTableName="msedcl_invoices" baseColumnNames="reversal_of_invoice_id"
+			referencedTableName="msedcl_invoices" referencedColumnNames="id"
+			constraintName="fk_invoice_reversal_original"/>
+		<dropUniqueConstraint tableName="msedcl_invoices" constraintName="uk_invoice_detail_billing_date"/>
+	</changeSet>
+</databaseChangeLog>

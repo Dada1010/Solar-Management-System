@@ -30,10 +30,20 @@
 			</section>
 		</section>
 		<section class="directory-panel invoice-history"><div class="directory-heading"><strong>INVOICE HISTORY</strong><span>{{ invoices.length }} invoices</span></div>
+			<div class="invoice-filters">
+				<label>Invoice number<input pInputText [(ngModel)]="invoiceNoFilter" placeholder="Search invoice no."></label>
+				<label>Consumer name<input pInputText [(ngModel)]="consumerNameFilter" placeholder="Search consumer"></label>
+				<label>Consumer number<input pInputText [(ngModel)]="consumerNoFilter" placeholder="Search consumer no."></label>
+				<label>Payment status<select [(ngModel)]="paymentStatusFilter"><option value="">All</option><option value="PAID">Paid</option><option value="UNPAID">Unpaid</option></select></label>
+				<label>Invoice status<select [(ngModel)]="invoiceStatusFilter"><option value="">All</option><option value="OPEN">Open</option><option value="CANCELLED">Cancelled</option></select></label>
+				<label>Invoice date from<input pInputText type="date" [(ngModel)]="invoiceDateFrom"></label>
+				<label>Invoice date to<input pInputText type="date" [(ngModel)]="invoiceDateTo"></label>
+				<div class="filter-actions"><p-button label="Filter" icon="pi pi-filter" (onClick)="applyInvoiceFilters()" [loading]="filtering"></p-button><p-button label="Clear" severity="secondary" [outlined]="true" (onClick)="clearInvoiceFilters()" [disabled]="filtering || (!invoiceNoFilter && !consumerNameFilter && !consumerNoFilter && !paymentStatusFilter && !invoiceStatusFilter && !invoiceDateFrom && !invoiceDateTo)"></p-button></div>
+			</div>
 			<p-table [value]="invoices" [rowHover]="true" responsiveLayout="scroll" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '78rem' }">
-				<ng-template pTemplate="header"><tr><th>Invoice number</th><th>Invoice date</th><th>Due date</th><th>Billing date</th><th>Consumer</th><th>Consumer number</th><th>Solar units</th><th>Rate / unit</th><th>Invoice amount</th><th>Paid amount</th><th>Balance amount</th><th class="invoice-actions-cell">Actions</th></tr></ng-template>
-				<ng-template pTemplate="body" let-invoice><tr><td>{{ invoice.invoiceNo }}</td><td>{{ invoice.invoiceDate }}</td><td>{{ invoice.dueDate }}</td><td>{{ invoice.billingDate }}</td><td>{{ invoice.consumerName }}</td><td>{{ invoice.consumerNo }}</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }}</td><td>{{ invoice.ratePerUnit | number:'1.2-4' }}</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td class="invoice-actions-cell"><p-button icon="pi pi-ellipsis-v" [text]="true" severity="secondary" aria-label="Invoice actions" (onClick)="openInvoiceActions(invoice, $event, invoiceMenu)"></p-button></td></tr></ng-template>
-				<ng-template pTemplate="emptymessage"><tr><td colspan="12" class="empty-cell">No invoices yet.</td></tr></ng-template>
+				<ng-template pTemplate="header"><tr><th>Invoice number</th><th>Original invoice</th><th>Invoice status</th><th>Invoice date</th><th>Due date</th><th>Billing date</th><th>Consumer</th><th>Consumer number</th><th>Solar units</th><th>Rate / unit</th><th>Invoice amount</th><th>Paid amount</th><th>Balance amount</th><th class="invoice-actions-cell">Actions</th></tr></ng-template>
+				<ng-template pTemplate="body" let-invoice><tr><td>{{ invoice.invoiceNo }}</td><td>{{ invoice.originalInvoiceNo || '—' }}</td><td>{{ invoice.status }}</td><td>{{ invoice.invoiceDate }}</td><td>{{ invoice.dueDate }}</td><td>{{ invoice.billingDate }}</td><td>{{ invoice.consumerName }}</td><td>{{ invoice.consumerNo }}</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }}</td><td>{{ invoice.ratePerUnit | number:'1.2-4' }}</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td class="invoice-actions-cell"><p-button icon="pi pi-ellipsis-v" [text]="true" severity="secondary" aria-label="Invoice actions" (onClick)="openInvoiceActions(invoice, $event, invoiceMenu)"></p-button></td></tr></ng-template>
+				<ng-template pTemplate="emptymessage"><tr><td colspan="14" class="empty-cell">No invoices yet.</td></tr></ng-template>
 			</p-table>
 		</section>
 	</ng-container>
@@ -41,7 +51,7 @@
 	<input #msebBillPicker class="file-picker" type="file" accept="application/pdf,image/jpeg,image/png" aria-label="Choose MSEB bill" (change)="uploadSelectedMsebBill($event)">
 	<p-dialog [(visible)]="paymentDialogVisible" [header]="'Payment history' + (selectedPaymentInvoice ? ' · ' + selectedPaymentInvoice.invoiceNo : '')" [modal]="true" [draggable]="false" [style]="{ width: 'min(46rem, 96vw)' }">
 		<div class="payment-summary" *ngIf="selectedPaymentInvoice as invoice"><div><span>Invoice total</span><strong>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Paid amount</span><strong>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Balance amount</span><strong>{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
-		<form *ngIf="canRecordPayment && paymentEntryVisible && selectedPaymentInvoice?.balanceAmount" [formGroup]="paymentForm" class="payment-form" (ngSubmit)="addPayment()">
+		<form *ngIf="canRecordPayment && paymentEntryVisible && selectedPaymentInvoice?.status === 'OPEN' && selectedPaymentInvoice?.balanceAmount" [formGroup]="paymentForm" class="payment-form" (ngSubmit)="addPayment()">
 			<label>Payment date<input pInputText type="date" formControlName="paymentDate"></label>
 			<label>Amount received<input pInputText type="number" min="0.01" step="0.01" formControlName="amount"></label>
 			<label>Payment type<select formControlName="paymentType" (change)="onPaymentTypeChange()"><option value="CASH">Cash</option><option value="UPI">UPI</option></select></label>
@@ -50,14 +60,11 @@
 			<p-button label="Record payment" icon="pi pi-check" type="submit" [loading]="savingPayment" [disabled]="paymentForm.invalid"></p-button>
 		</form>
 		<div class="payment-loading" *ngIf="loadingPayments" role="status">Loading payment history…</div>
-		<p-table *ngIf="!loadingPayments" [value]="paymentHistory" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '26rem' }">
-			<ng-template pTemplate="header"><tr><th>Date</th><th>Amount received</th><th>Payment type</th><th>Transaction number</th><th>Reference / note</th></tr></ng-template>
-			<ng-template pTemplate="body" let-payment><tr><td>{{ payment.paymentDate }}</td><td>{{ payment.amount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ payment.paymentType }}</td><td>{{ payment.transactionNo || '—' }}</td><td>{{ payment.note || '—' }}</td></tr></ng-template>
-			<ng-template pTemplate="emptymessage"><tr><td colspan="5" class="empty-cell">No payments recorded yet.</td></tr></ng-template>
+		<p-table *ngIf="!loadingPayments" [value]="paymentHistory" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '32rem' }">
+			<ng-template pTemplate="header"><tr><th>Date</th><th>Amount</th><th>Type</th><th>Transaction number</th><th>Reference / note</th><th>Actions</th></tr></ng-template>
+			<ng-template pTemplate="body" let-payment><tr><td>{{ payment.paymentDate }}</td><td>{{ payment.amount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ payment.entryType === 'REVERSAL' ? 'Reversal' : payment.paymentType }}</td><td>{{ payment.transactionNo || '—' }}</td><td>{{ payment.note || '—' }}</td><td><p-button *ngIf="canCreate && selectedPaymentInvoice?.status === 'OPEN' && payment.entryType === 'PAYMENT' && !payment.reversed" label="Reverse" icon="pi pi-ban" severity="danger" [text]="true" (onClick)="cancelPayment(payment)"></p-button><span *ngIf="payment.reversed">Reversed</span></td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="6" class="empty-cell">No payments recorded yet.</td></tr></ng-template>
 		</p-table>
-	</p-dialog>
-	<p-dialog [(visible)]="billPreviewVisible" [header]="'MSEB bill'" [modal]="true" [draggable]="false" [style]="{ width: 'min(58rem, 96vw)' }" (onHide)="closeBillPreview()">
-		<iframe *ngIf="billPreviewUrl" class="bill-preview-frame" [src]="billPreviewUrl" title="Uploaded MSEB bill"></iframe>
 	</p-dialog>
 	<section class="invoice-print" *ngIf="printRecord as invoice">
 		<header class="print-header"><div><strong>ADITYA SOLAR</strong><span>Consumer energy invoice</span></div><div class="print-number"><span>Invoice number</span><strong>{{ invoice.invoiceNo }}</strong><span>Invoice date: {{ invoice.invoiceDate }}</span></div></header>

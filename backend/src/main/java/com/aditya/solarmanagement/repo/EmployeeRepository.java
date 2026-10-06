@@ -16,6 +16,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>, JpaSp
 	Optional<Employee> findByEmailAddressIgnoreCase(String emailAddress);
 	boolean existsByEmailAddressIgnoreCase(String emailAddress);
 	boolean existsByEmailAddressIgnoreCaseAndIdNot(String emailAddress, Long id);
+	boolean existsByBranch_Id(Long branchId);
+	long countByEmployeeType(Employee.EmployeeType employeeType);
+	long countByEmployeeTypeAndBranch_Id(Employee.EmployeeType employeeType, Long branchId);
 	List<Employee> findAllByEmployeeType(Employee.EmployeeType employeeType);
 
 	@Override

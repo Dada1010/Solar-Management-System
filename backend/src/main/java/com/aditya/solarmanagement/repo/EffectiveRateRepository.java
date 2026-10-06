@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.aditya.solarmanagement.models.EffectiveRate;
 
 public interface EffectiveRateRepository extends JpaRepository<EffectiveRate, Long> {
+	boolean existsByCompany_Id(Long companyId);
+	boolean existsByBranch_Id(Long branchId);
 	List<EffectiveRate> findAllByCompany_IdOrderByStartDateDescIdDesc(Long companyId);
 	List<EffectiveRate> findAllByBranch_IdOrderByStartDateDescIdDesc(Long branchId);
 	List<EffectiveRate> findAllByMsedclDetail_IdOrderByStartDateDescIdDesc(Long detailId);

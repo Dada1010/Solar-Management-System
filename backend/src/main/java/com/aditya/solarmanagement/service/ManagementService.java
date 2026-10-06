@@ -21,16 +21,19 @@ public interface ManagementService {
 	CompanyResponse company(Long id);
 	CompanyResponse addCompany(CompanyRequest request);
 	CompanyResponse updateCompany(Long id, CompanyRequest request);
+	void deleteCompany(Long id);
 	PageResponse<BranchResponse> branches(int page, int size, String name);
 	BranchResponse branch(Long id);
 	PageResponse<BranchResponse> branchesForCompany(Long companyId, int page, int size, String name);
 	BranchResponse addBranch(BranchRequest request);
 	BranchResponse updateBranch(Long id, BranchRequest request);
+	void deleteBranch(Long id);
 	PageResponse<EmployeeResponse> employees(int page, int size, String name);
 	PageResponse<EmployeeResponse> employeesByType(Employee.EmployeeType employeeType, int page, int size, String name);
 	EmployeeResponse employee(Long id);
 	EmployeeResponse addEmployee(EmployeeRequest request);
 	EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
+	void deleteEmployee(Long id);
 	List<MsedclDetailResponse> consumerDetails(String requestingEmail, String name, String mobileNo, String consumerNo);
 	List<MsedclDetailResponse> msedclDetails(Long customerId, String requestingEmail, String name, String mobileNo,
 			String consumerNo);

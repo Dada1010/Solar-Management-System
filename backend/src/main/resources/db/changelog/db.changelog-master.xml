@@ -21,4 +21,6 @@
 	<include file="db/changelog/changes/016-add-msedcl-due-days.xml"/>
 	<include file="db/changelog/changes/017-add-invoice-due-date.xml"/>
 	<include file="db/changelog/changes/018-add-payment-type.xml"/>
+	<include file="db/changelog/changes/019-add-invoice-cancellation.xml"/>
+	<include file="db/changelog/changes/020-add-payment-reversals.xml"/>
 </databaseChangeLog>

@@ -32,6 +32,7 @@ public class EffectiveRateController {
 	}
 
 	@GetMapping("/{ownerType}/{ownerId}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<List<EffectiveRateResponse>>> rates(@PathVariable EffectiveRateOwnerType ownerType,
 			@PathVariable Long ownerId) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Effective rates retrieved successfully",
@@ -39,7 +40,7 @@ public class EffectiveRateController {
 	}
 
 	@PostMapping("/{ownerType}/{ownerId}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<EffectiveRateResponse>> add(@PathVariable EffectiveRateOwnerType ownerType,
 			@PathVariable Long ownerId, @Valid @RequestBody EffectiveRateRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED,
@@ -47,7 +48,7 @@ public class EffectiveRateController {
 	}
 
 	@PutMapping("/{ownerType}/{ownerId}/{rateId}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<EffectiveRateResponse>> update(@PathVariable EffectiveRateOwnerType ownerType,
 			@PathVariable Long ownerId, @PathVariable Long rateId, @Valid @RequestBody EffectiveRateRequest request) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Effective rate updated successfully",

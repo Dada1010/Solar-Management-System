@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -30,6 +31,7 @@ public class BranchController {
 	}
 
 	@GetMapping("/branches")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<PageResponse<BranchResponse>>> branches(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
@@ -39,12 +41,14 @@ public class BranchController {
 	}
 
 	@GetMapping("/branches/{id}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<BranchResponse>> branch(@PathVariable Long id) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Branch retrieved successfully",
 				managementService.branch(id)));
 	}
 
 	@GetMapping("/companies/{companyId}/branches")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<PageResponse<BranchResponse>>> branchesForCompany(@PathVariable Long companyId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
@@ -54,7 +58,7 @@ public class BranchController {
 	}
 
 	@PostMapping("/branches")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<BranchResponse>> addBranch(@Valid @RequestBody BranchRequest request) {
 		BranchResponse data = managementService.addBranch(request);
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -62,10 +66,17 @@ public class BranchController {
 	}
 
 	@PutMapping("/branches/{id}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<BranchResponse>> updateBranch(@PathVariable Long id,
 			@Valid @RequestBody BranchRequest request) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Branch updated successfully",
 				managementService.updateBranch(id, request)));
+	}
+
+	@DeleteMapping("/branches/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<Void>> deleteBranch(@PathVariable Long id) {
+		managementService.deleteBranch(id);
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Branch deleted successfully", null));
 	}
 }

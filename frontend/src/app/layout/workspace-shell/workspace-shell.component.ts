@@ -11,7 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: false
 })
 export class WorkspaceShellComponent implements OnDestroy {
-  activeTitle = 'Companies';
+  activeTitle = 'Dashboard';
   navOpen = false;
   readonly profileMenu: MenuItem[] = [
     { label: 'Signed in', disabled: true },
@@ -46,6 +46,7 @@ export class WorkspaceShellComponent implements OnDestroy {
   private setTitle(url: string): void {
     const path = url.split('?')[0].replace(/^\//, '').split('/')[0];
     const titles: Record<string, string> = {
+      dashboard: 'Dashboard',
       companies: 'Companies',
       branches: 'Branches',
       employees: 'Employees',
@@ -54,6 +55,6 @@ export class WorkspaceShellComponent implements OnDestroy {
       invoices: 'Invoices',
       'payment-details': 'Payment Details'
     };
-    this.activeTitle = titles[path] ?? 'Companies';
+    this.activeTitle = titles[path] ?? 'Dashboard';
   }
 }

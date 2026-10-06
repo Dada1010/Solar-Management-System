@@ -1,0 +1,23 @@
+<section class="feature-page">
+	<header class="feature-heading">
+		<div><p class="eyebrow">ADITYA SOLAR / OVERVIEW</p><h1>Dashboard</h1><p>Customer accounts and invoice balances across your access scope.</p></div>
+		<p-button icon="pi pi-refresh" label="Refresh" severity="secondary" [outlined]="true" (onClick)="load()" [loading]="loading"></p-button>
+	</header>
+	<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading dashboard…</span></div>
+	<ng-container *ngIf="!loading && report as data">
+		<section class="dashboard-metrics" aria-label="Dashboard summary">
+			<article class="metric"><span>Total customers</span><strong>{{ data.totalCustomers | number }}</strong><small>Accounts in your access scope</small></article>
+			<article class="metric"><span>Invoices with balance</span><strong>{{ data.dueInvoiceCount | number }}</strong><small>Open invoices with an amount due</small></article>
+			<article class="metric metric-alert"><span>Overdue invoices</span><strong>{{ data.overdueInvoiceCount | number }}</strong><small>Past their due date</small></article>
+			<article class="metric metric-total"><span>Outstanding amount</span><strong>{{ data.outstandingAmount | currency:'INR':'symbol':'1.2-2' }}</strong><small>Across open invoices</small></article>
+		</section>
+		<section class="directory-panel due-report">
+			<div class="directory-heading"><strong>DUE REPORT</strong><span>{{ data.dueInvoices.length }} open balances</span></div>
+			<p-table [value]="data.dueInvoices" [rowHover]="true" responsiveLayout="scroll" [paginator]="data.dueInvoices.length > 10" [rows]="10" [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '54rem' }">
+				<ng-template pTemplate="header"><tr><th>Due date</th><th>Invoice number</th><th>Customer</th><th>Consumer number</th><th>Invoice amount</th><th>Paid</th><th>Balance due</th><th>Status</th></tr></ng-template>
+				<ng-template pTemplate="body" let-invoice><tr><td>{{ invoice.dueDate }}</td><td>{{ invoice.invoiceNo }}<small class="original-invoice" *ngIf="invoice.originalInvoiceNo">Original {{ invoice.originalInvoiceNo }}</small></td><td>{{ invoice.consumerName }}</td><td>{{ invoice.consumerNo }}</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</td><td class="balance-due">{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td><span class="due-status" [class.overdue]="invoice.overdue">{{ invoice.overdue ? 'Overdue' : 'Due' }}</span></td></tr></ng-template>
+				<ng-template pTemplate="emptymessage"><tr><td colspan="8" class="empty-cell">No open invoice balances.</td></tr></ng-template>
+			</p-table>
+		</section>
+	</ng-container>
+</section>

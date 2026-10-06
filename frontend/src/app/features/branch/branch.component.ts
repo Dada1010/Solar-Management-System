@@ -53,6 +53,14 @@ export class BranchComponent {
     this.loadPage();
   }
 
+  get canWrite(): boolean {
+    return this.auth.user?.role === 'ADMIN' || this.auth.user?.role === 'USER';
+  }
+
+  get canDelete(): boolean {
+    return this.auth.user?.role === 'ADMIN';
+  }
+
   get selectedCompanyName(): string {
     const id = this.form.controls.companyId.value;
     return this.companies.find((company) => company.id === id)?.name ?? this.auth.user?.companyName ?? '';
@@ -119,6 +127,17 @@ export class BranchComponent {
         this.dialogVisible = true;
       },
       error: (error: unknown) => this.handleError('Could not load branch', error)
+    });
+  }
+
+  remove(branch: BranchRecord): void {
+    if (!this.canDelete || !window.confirm(`Delete branch ${branch.name}?`)) return;
+    this.api.deleteBranch(branch.id).subscribe({
+      next: () => {
+        this.messages.add({ severity: 'success', summary: 'Deleted', detail: 'Branch deleted.' });
+        this.loadPage();
+      },
+      error: (error: unknown) => this.handleError('Could not delete branch', error)
     });
   }
 

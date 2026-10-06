@@ -43,7 +43,7 @@ public class CustomerMsedclController {
 	}
 
 	@PostMapping
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<MsedclDetailResponse>> add(@PathVariable Long customerId,
 			@Valid @RequestBody MsedclDetailRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED,
@@ -51,7 +51,7 @@ public class CustomerMsedclController {
 	}
 
 	@PutMapping("/{detailId}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<MsedclDetailResponse>> update(@PathVariable Long customerId,
 			@PathVariable Long detailId, @Valid @RequestBody MsedclDetailRequest request) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "MSEDCL detail updated successfully",

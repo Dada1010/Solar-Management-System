@@ -16,14 +16,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "msedcl_invoices", uniqueConstraints = @UniqueConstraint(name = "uk_invoice_detail_billing_date",
-		columnNames = { "msedcl_detail_id", "billing_date" }))
+@Table(name = "msedcl_invoices")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MsedclInvoice {
@@ -33,6 +31,9 @@ public class MsedclInvoice {
 
 	@Column(name = "invoice_no", nullable = false, length = 160)
 	private String invoiceNo;
+
+	@Column(name = "original_invoice_no_snapshot", length = 160)
+	private String originalInvoiceNoSnapshot;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "msedcl_detail_id", nullable = false)
@@ -45,6 +46,14 @@ public class MsedclInvoice {
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "branch_id", nullable = false)
 	private Branch branch;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "reversal_of_invoice_id")
+	private MsedclInvoice reversalOfInvoice;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "invoice_status", nullable = false, length = 20)
+	private InvoiceStatus status = InvoiceStatus.OPEN;
 
 	@Column(name = "consumer_no_snapshot", nullable = false, length = 50)
 	private String consumerNo;
@@ -180,6 +189,48 @@ public class MsedclInvoice {
 	public void assignInvoiceNo(String invoiceNo) {
 		this.invoiceNo = invoiceNo;
 	}
+
+	public void cancel() {
+		this.status = InvoiceStatus.CANCELLED;
+	}
+
+	public MsedclInvoice createCancellationReversal(LocalDate cancellationDate) {
+		MsedclInvoice reversal = new MsedclInvoice();
+		reversal.msedclDetail = this.msedclDetail;
+		reversal.company = this.company;
+		reversal.branch = this.branch;
+		reversal.reversalOfInvoice = this;
+		reversal.originalInvoiceNoSnapshot = this.invoiceNo;
+		reversal.status = InvoiceStatus.CANCELLED;
+		reversal.invoiceNo = "PENDING-" + UUID.randomUUID();
+		reversal.consumerNo = this.consumerNo;
+		reversal.consumerName = this.consumerName;
+		reversal.billingUnit = this.billingUnit;
+		reversal.chargeType = this.chargeType;
+		reversal.invoiceDate = cancellationDate;
+		reversal.dueDays = 0;
+		reversal.dueDate = cancellationDate;
+		reversal.billingDate = this.billingDate;
+		reversal.importCurrent = this.importCurrent;
+		reversal.importPrevious = this.importPrevious;
+		reversal.importConsumption = this.importConsumption;
+		reversal.exportCurrent = this.exportCurrent;
+		reversal.exportPrevious = this.exportPrevious;
+		reversal.exportConsumption = this.exportConsumption;
+		reversal.generationCurrent = this.generationCurrent;
+		reversal.generationPrevious = this.generationPrevious;
+		reversal.generationConsumption = this.generationConsumption;
+		reversal.previousBankUnits = this.previousBankUnits;
+		reversal.solarOffsetUnits = this.solarOffsetUnits;
+		reversal.bankSolarUnits = this.bankSolarUnits;
+		reversal.solarBillUnits = this.solarBillUnits;
+		reversal.ratePerUnit = this.ratePerUnit;
+		reversal.rateSource = this.rateSource;
+		reversal.solarAmount = this.solarAmount.negate();
+		reversal.msebBillAmount = this.msebBillAmount.negate();
+		reversal.invoiceAmount = this.invoiceAmount.negate();
+		return reversal;
+}
 
 	public void attachMsebBill(String storageName, String fileName, String contentType, LocalDateTime uploadedAt) {
 		this.msebBillStorageName = storageName;

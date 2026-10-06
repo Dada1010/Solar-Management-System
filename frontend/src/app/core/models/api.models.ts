@@ -139,6 +139,16 @@ export interface MsedclInvoicePayload {
   msebBillAmount: number | null;
 }
 
+export interface InvoiceFilters {
+  invoiceNo?: string;
+  consumerName?: string;
+  consumerNo?: string;
+  paymentStatus?: 'PAID' | 'UNPAID';
+  invoiceStatus?: 'OPEN' | 'CANCELLED';
+  invoiceDateFrom?: string;
+  invoiceDateTo?: string;
+}
+
 export interface MsedclInvoiceRecord {
   id: number | null;
   invoiceId: number | null;
@@ -150,6 +160,9 @@ export interface MsedclInvoiceRecord {
   consumerName: string;
   billingUnit: string;
   chargeType: MsedclChargeType;
+  status: 'OPEN' | 'CANCELLED';
+  reversalOfInvoiceId: number | null;
+  originalInvoiceNo: string | null;
   invoiceDate: string;
   billingDate: string;
   dueDays: number;
@@ -182,6 +195,7 @@ export interface InvoicePaymentRecord {
   id: number;
   invoiceId: number;
   invoiceNo: string;
+  invoiceStatus: 'OPEN' | 'CANCELLED';
   consumerName: string;
   consumerNo: string;
   paymentDate: string;
@@ -189,6 +203,9 @@ export interface InvoicePaymentRecord {
   paymentType: InvoicePaymentType;
   transactionNo: string | null;
   note: string | null;
+  entryType: 'PAYMENT' | 'REVERSAL';
+  reversalOfPaymentId: number | null;
+  reversed: boolean;
 }
 
 export interface InvoicePaymentPayload {
@@ -207,4 +224,25 @@ export interface PageResult<T> {
   totalPages: number;
   first: boolean;
   last: boolean;
+}
+
+export interface DashboardReportRow {
+  invoiceId: number;
+  invoiceNo: string;
+  originalInvoiceNo: string | null;
+  consumerName: string;
+  consumerNo: string;
+  dueDate: string;
+  invoiceAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  overdue: boolean;
+}
+
+export interface DashboardRecord {
+  totalCustomers: number;
+  dueInvoiceCount: number;
+  overdueInvoiceCount: number;
+  outstandingAmount: number;
+  dueInvoices: DashboardReportRow[];
 }

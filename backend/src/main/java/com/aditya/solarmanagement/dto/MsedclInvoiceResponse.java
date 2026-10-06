@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.aditya.solarmanagement.models.MsedclChargeType;
+import com.aditya.solarmanagement.models.InvoiceStatus;
 
 public record MsedclInvoiceResponse(
 		Long id,
@@ -17,6 +18,9 @@ public record MsedclInvoiceResponse(
 		String consumerName,
 		String billingUnit,
 		MsedclChargeType chargeType,
+		InvoiceStatus status,
+		Long reversalOfInvoiceId,
+		String originalInvoiceNo,
 		LocalDate invoiceDate,
 		LocalDate billingDate,
 		int dueDays,

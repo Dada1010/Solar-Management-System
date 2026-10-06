@@ -1,17 +1,21 @@
 <div class="workspace" [class.nav-open]="navOpen">
   <button class="nav-scrim" type="button" aria-label="Close navigation" (click)="navOpen = false"></button>
   <aside class="sidebar">
-    <a class="sidebar-brand" routerLink="/companies" aria-label="Aditya Solar home">
+    <a class="sidebar-brand" routerLink="/dashboard" aria-label="Aditya Solar home">
       <span class="brand-symbol">A</span><span>ADITYA SOLAR<small>MANAGEMENT SYSTEM</small></span>
     </a>
     <div class="sidebar-caption">WORKSPACE</div>
     <div class="org-switcher"><span class="org-mark">A</span><span>Aditya Solar Group<small>Organization</small></span><i class="pi pi-angle-down"></i></div>
     <nav class="side-nav" aria-label="Management navigation">
-      <span class="nav-section-label">MANAGE</span>
-      <a routerLink="/companies" routerLinkActive="current"><i class="pi pi-building"></i><span>Company</span><i class="pi pi-angle-right nav-arrow"></i></a>
-      <a routerLink="/branches" routerLinkActive="current"><i class="pi pi-map-marker"></i><span>Branch</span><i class="pi pi-angle-right nav-arrow"></i></a>
-      <a routerLink="/employees" routerLinkActive="current"><i class="pi pi-users"></i><span>Employee</span><i class="pi pi-angle-right nav-arrow"></i></a>
-      <a routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      <span class="nav-section-label">OVERVIEW</span>
+      <a routerLink="/dashboard" routerLinkActive="current"><i class="pi pi-chart-bar"></i><span>Dashboard</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      <ng-container *ngIf="auth.user?.role !== 'CUSTOMER'">
+        <span class="nav-section-label">MANAGE</span>
+        <a routerLink="/companies" routerLinkActive="current"><i class="pi pi-building"></i><span>Company</span><i class="pi pi-angle-right nav-arrow"></i></a>
+        <a routerLink="/branches" routerLinkActive="current"><i class="pi pi-map-marker"></i><span>Branch</span><i class="pi pi-angle-right nav-arrow"></i></a>
+        <a routerLink="/employees" routerLinkActive="current"><i class="pi pi-users"></i><span>Employee</span><i class="pi pi-angle-right nav-arrow"></i></a>
+        <a routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      </ng-container>
       <a routerLink="/consumer-details" routerLinkActive="current"><i class="pi pi-bolt"></i><span>Consumer Details</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/invoices" routerLinkActive="current"><i class="pi pi-file-edit"></i><span>Invoices</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/payment-details" routerLinkActive="current"><i class="pi pi-wallet"></i><span>Payment Details</span><i class="pi pi-angle-right nav-arrow"></i></a>

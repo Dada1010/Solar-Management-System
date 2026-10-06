@@ -8,10 +8,12 @@ import { PeopleComponent } from '../features/people/people.component';
 import { ConsumerDetailsComponent } from '../features/consumer-details/consumer-details.component';
 import { InvoiceComponent } from '../features/invoice/invoice.component';
 import { PaymentDetailsComponent } from '../features/payment-details/payment-details.component';
+import { DashboardComponent } from '../features/dashboard/dashboard.component';
 
 @NgModule({
   declarations: [
     WorkspaceShellComponent,
+    DashboardComponent,
     CompanyComponent,
     BranchComponent,
     PeopleComponent,

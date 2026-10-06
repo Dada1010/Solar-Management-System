@@ -2,9 +2,8 @@ import { Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } fro
 import { FormBuilder, Validators } from '@angular/forms';
 import { MenuItem, MessageService } from 'primeng/api';
 import { Menu } from 'primeng/menu';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin, Subscription } from 'rxjs';
-import { InvoicePaymentPayload, InvoicePaymentRecord, InvoicePaymentType, MsedclDetailRecord, MsedclInvoicePayload, MsedclInvoiceRecord } from '../../core/models/api.models';
+import { InvoiceFilters, InvoicePaymentPayload, InvoicePaymentRecord, InvoicePaymentType, MsedclDetailRecord, MsedclInvoicePayload, MsedclInvoiceRecord } from '../../core/models/api.models';
 import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
 
@@ -18,25 +17,29 @@ export class InvoiceComponent implements OnDestroy {
 	private readonly formBuilder = inject(FormBuilder);
 	details: MsedclDetailRecord[] = [];
 	invoices: MsedclInvoiceRecord[] = [];
+	invoiceNoFilter = '';
+	consumerNameFilter = '';
+	consumerNoFilter = '';
+	paymentStatusFilter: '' | 'PAID' | 'UNPAID' = '';
+	invoiceStatusFilter: '' | 'OPEN' | 'CANCELLED' = '';
+	invoiceDateFrom = '';
+	invoiceDateTo = '';
 	previewResult: MsedclInvoiceRecord | null = null;
 	selectedPaymentInvoice: MsedclInvoiceRecord | null = null;
 	paymentHistory: InvoicePaymentRecord[] = [];
 	invoiceActionItems: MenuItem[] = [];
 	loading = false;
+	filtering = false;
 	previewing = false;
 	saving = false;
 	loadingPayments = false;
 	savingPayment = false;
 	paymentDialogVisible = false;
 	paymentEntryVisible = false;
-	billPreviewVisible = false;
-	billPreviewUrl: SafeResourceUrl | null = null;
 	formVisible = false;
 	printRecord: MsedclInvoiceRecord | null = null;
 	uploadingInvoiceId: number | null = null;
 	private uploadTargetInvoice: MsedclInvoiceRecord | null = null;
-	private billObjectUrl: string | null = null;
-	private readonly sanitizer = inject(DomSanitizer);
 	@ViewChild('msebBillPicker') private msebBillPicker?: ElementRef<HTMLInputElement>;
 	readonly form = this.formBuilder.group({
 		msedclDetailId: this.formBuilder.control<number | null>(null, Validators.required),
@@ -77,6 +80,35 @@ export class InvoiceComponent implements OnDestroy {
 		return this.canCreate;
 	}
 
+	applyInvoiceFilters(): void {
+		if (this.invoiceDateFrom && this.invoiceDateTo && this.invoiceDateFrom > this.invoiceDateTo) {
+			this.messages.add({ severity: 'error', summary: 'Invalid date range', detail: 'From date must be on or before To date.' });
+			return;
+		}
+		this.filtering = true;
+		this.api.invoices(this.invoiceFilters()).subscribe({
+			next: (invoices) => {
+				this.invoices = invoices;
+				this.filtering = false;
+			},
+			error: (error: unknown) => {
+				this.filtering = false;
+				this.showError('Could not filter invoices', error);
+			}
+		});
+	}
+
+	clearInvoiceFilters(): void {
+		this.invoiceNoFilter = '';
+		this.consumerNameFilter = '';
+		this.consumerNoFilter = '';
+		this.paymentStatusFilter = '';
+		this.invoiceStatusFilter = '';
+		this.invoiceDateFrom = '';
+		this.invoiceDateTo = '';
+		this.applyInvoiceFilters();
+	}
+
 	get isUpiPayment(): boolean {
 		return this.paymentForm.controls.paymentType.value === 'UPI';
 	}
@@ -104,7 +136,6 @@ export class InvoiceComponent implements OnDestroy {
 
 	ngOnDestroy(): void {
 		this.formSubscription.unsubscribe();
-		this.revokeBillPreview();
 	}
 
 	onPaymentTypeChange(): void {
@@ -207,37 +238,72 @@ export class InvoiceComponent implements OnDestroy {
 
 	viewMsebBill(invoice: MsedclInvoiceRecord): void {
 		if (invoice.id === null) return;
+		const billWindow = window.open('about:blank', '_blank');
+		if (!billWindow) {
+			this.messages.add({ severity: 'error', summary: 'Popup blocked', detail: 'Allow a new tab to view the MSEB bill.' });
+			return;
+		}
+		billWindow.opener = null;
 		this.api.downloadInvoiceMsebBill(invoice.id).subscribe({
 			next: (response) => {
-				if (!response.body) return;
-				this.revokeBillPreview();
-				this.billObjectUrl = URL.createObjectURL(response.body);
-				this.billPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.billObjectUrl);
-				this.billPreviewVisible = true;
+				if (!response.body) {
+					billWindow.close();
+					this.messages.add({ severity: 'error', summary: 'Empty document', detail: 'The uploaded MSEB bill has no content.' });
+					return;
+				}
+				const documentUrl = URL.createObjectURL(response.body);
+				billWindow.location.replace(documentUrl);
+				window.setTimeout(() => URL.revokeObjectURL(documentUrl), 60_000);
 			},
-			error: (error: unknown) => this.showError('Could not view MSEB bill', error)
+			error: (error: unknown) => {
+				billWindow.close();
+				this.showError('Could not view MSEB bill', error);
+			}
 		});
-	}
-
-	closeBillPreview(): void {
-		this.billPreviewVisible = false;
-		this.revokeBillPreview();
 	}
 
 	openInvoiceActions(invoice: MsedclInvoiceRecord, event: Event, menu: Menu): void {
 		this.invoiceActionItems = [
 			{ label: 'Print invoice', icon: 'pi pi-print', command: () => this.printInvoice(invoice) }
 		];
-		if (invoice.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT') {
-			this.invoiceActionItems.push(invoice.msebBillFileName
-				? { label: 'View uploaded MSEB bill', icon: 'pi pi-eye', command: () => this.viewMsebBill(invoice) }
-				: { label: 'Upload MSEB bill', icon: 'pi pi-upload', disabled: !this.canCreate, command: () => this.openMsebBillPicker(invoice) });
+		if (invoice.msebBillFileName) {
+			this.invoiceActionItems.push({ label: 'View uploaded MSEB bill', icon: 'pi pi-eye', command: () => this.viewMsebBill(invoice) });
+		} else if (invoice.status === 'OPEN') {
+			this.invoiceActionItems.push({ label: 'Upload MSEB bill', icon: 'pi pi-upload', disabled: !this.canCreate, command: () => this.openMsebBillPicker(invoice) });
 		}
 		this.invoiceActionItems.push({ label: 'Payment details', icon: 'pi pi-list', command: () => this.openPaymentHistory(invoice) });
-		if (this.canRecordPayment && invoice.balanceAmount > 0) {
+		if (this.canRecordPayment && invoice.status === 'OPEN' && invoice.balanceAmount > 0) {
 			this.invoiceActionItems.push({ label: 'Add payment', icon: 'pi pi-plus-circle', command: () => this.openPaymentHistory(invoice, true) });
 		}
+		if (this.canCreate && invoice.status === 'OPEN' && invoice.reversalOfInvoiceId === null) {
+			this.invoiceActionItems.push({ label: 'Cancel invoice', icon: 'pi pi-ban', command: () => this.cancelInvoice(invoice) });
+		}
 		menu.toggle(event);
+	}
+
+	cancelInvoice(invoice: MsedclInvoiceRecord): void {
+		if (invoice.id === null || !window.confirm(`Cancel invoice ${invoice.invoiceNo}? A reversal record will be added when payments exist.`)) return;
+		this.api.cancelInvoice(invoice.id).subscribe({
+			next: () => {
+				this.loadInvoices();
+				this.messages.add({ severity: 'success', summary: 'Invoice cancelled', detail: 'The original invoice was retained.' });
+			},
+			error: (error: unknown) => this.showError('Could not cancel invoice', error)
+		});
+	}
+
+	cancelPayment(payment: InvoicePaymentRecord): void {
+		const invoice = this.selectedPaymentInvoice;
+		if (!invoice || payment.entryType !== 'PAYMENT' || payment.reversed || invoice.status !== 'OPEN'
+			|| !window.confirm(`Add a reversal for payment ${payment.id}? The original payment will be retained.`)) return;
+		this.api.cancelInvoicePayment(payment.invoiceId, payment.id).subscribe({
+			next: () => {
+				this.openPaymentHistory(invoice);
+				this.loadInvoices();
+				this.messages.add({ severity: 'success', summary: 'Payment reversed', detail: 'A reversal entry was added.' });
+			},
+			error: (error: unknown) => this.showError('Could not reverse payment', error)
+		});
 	}
 
 	openMsebBillPicker(invoice: MsedclInvoiceRecord): void {
@@ -351,7 +417,7 @@ export class InvoiceComponent implements OnDestroy {
 	}
 
 	private loadInvoices(): void {
-		this.api.invoices().subscribe({
+		this.api.invoices(this.invoiceFilters()).subscribe({
 			next: (invoices) => {
 				this.invoices = invoices;
 				if (this.selectedPaymentInvoice) {
@@ -361,6 +427,18 @@ export class InvoiceComponent implements OnDestroy {
 			},
 		error: (error: unknown) => this.showError('Could not refresh invoices', error)
 		});
+	}
+
+	private invoiceFilters(): InvoiceFilters {
+		return {
+			invoiceNo: this.invoiceNoFilter || undefined,
+			consumerName: this.consumerNameFilter || undefined,
+			consumerNo: this.consumerNoFilter || undefined,
+			paymentStatus: this.paymentStatusFilter || undefined,
+			invoiceStatus: this.invoiceStatusFilter || undefined,
+			invoiceDateFrom: this.invoiceDateFrom || undefined,
+			invoiceDateTo: this.invoiceDateTo || undefined
+		};
 	}
 
 	private payload(): MsedclInvoicePayload {
@@ -398,9 +476,4 @@ export class InvoiceComponent implements OnDestroy {
 		this.messages.add({ severity: 'error', summary, detail: responseMessage ?? 'Please try again.' });
 	}
 
-	private revokeBillPreview(): void {
-		if (this.billObjectUrl) URL.revokeObjectURL(this.billObjectUrl);
-		this.billObjectUrl = null;
-		this.billPreviewUrl = null;
-	}
 }

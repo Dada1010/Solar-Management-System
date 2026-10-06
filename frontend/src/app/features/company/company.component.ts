@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { CompanyPayload, CompanyRecord } from '../../core/models/api.models';
+import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
 
 @Component({
@@ -28,8 +29,17 @@ export class CompanyComponent {
 		emailAddress: ['', Validators.email]
 	});
 
-	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService) {
+	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService,
+		readonly auth: AuthService) {
 		this.loadPage();
+	}
+
+	get canWrite(): boolean {
+		return this.auth.user?.role === 'ADMIN' || this.auth.user?.role === 'USER';
+	}
+
+	get canDelete(): boolean {
+		return this.auth.user?.role === 'ADMIN';
 	}
 
 	loadPage(): void {
@@ -72,6 +82,17 @@ export class CompanyComponent {
 				this.dialogVisible = true;
 			},
 			error: (error: unknown) => this.handleError('Could not load company', error)
+		});
+	}
+
+	remove(company: CompanyRecord): void {
+		if (!this.canDelete || !window.confirm(`Delete company ${company.name}?`)) return;
+		this.api.deleteCompany(company.id).subscribe({
+			next: () => {
+				this.messages.add({ severity: 'success', summary: 'Deleted', detail: 'Company deleted.' });
+				this.loadPage();
+			},
+			error: (error: unknown) => this.handleError('Could not delete company', error)
 		});
 	}
 

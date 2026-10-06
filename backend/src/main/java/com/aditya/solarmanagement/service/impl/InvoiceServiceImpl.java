@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +27,9 @@ import com.aditya.solarmanagement.models.Branch;
 import com.aditya.solarmanagement.models.EffectiveRate;
 import com.aditya.solarmanagement.models.Employee;
 import com.aditya.solarmanagement.models.EmployeeRole;
+import com.aditya.solarmanagement.models.InvoicePaymentEntryType;
+import com.aditya.solarmanagement.models.InvoicePaymentStatus;
+import com.aditya.solarmanagement.models.InvoiceStatus;
 import com.aditya.solarmanagement.models.MsedclChargeType;
 import com.aditya.solarmanagement.models.MsedclDetail;
 import com.aditya.solarmanagement.models.MsedclInvoice;
@@ -37,6 +41,7 @@ import com.aditya.solarmanagement.repo.MsedclInvoiceRepository;
 import com.aditya.solarmanagement.repo.MsedclInvoicePaymentRepository;
 import com.aditya.solarmanagement.service.InvoiceService;
 import com.aditya.solarmanagement.service.InvoiceAttachmentStorageService;
+import com.aditya.solarmanagement.repo.specification.InvoiceSpecifications;
 
 @Service
 @Transactional(readOnly = true)
@@ -61,14 +66,26 @@ public class InvoiceServiceImpl implements InvoiceService {
 	}
 
 	@Override
-	public List<MsedclInvoiceResponse> invoices(String requestingEmail) {
+	public List<MsedclInvoiceResponse> invoices(String requestingEmail, String invoiceNo, String consumerName,
+			String consumerNo, InvoicePaymentStatus paymentStatus, InvoiceStatus invoiceStatus,
+			LocalDate invoiceDateFrom, LocalDate invoiceDateTo) {
+		if (invoiceDateFrom != null && invoiceDateTo != null && invoiceDateFrom.isAfter(invoiceDateTo)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invoice date start must be on or before end date");
+		}
 		Employee requester = employeeByEmail(requestingEmail);
-		List<MsedclInvoice> results = switch (requester.getRole()) {
-			case ADMIN -> invoices.findAllByOrderByInvoiceDateDescIdDesc();
-			case USER -> invoices.findAllByMsedclDetail_Customer_Branch_IdOrderByInvoiceDateDescIdDesc(
-					requester.getBranch().getId());
-			case CUSTOMER -> invoices.findAllByMsedclDetail_Customer_IdOrderByInvoiceDateDescIdDesc(requester.getId());
+		var specification = InvoiceSpecifications.byInvoiceNo(invoiceNo)
+				.and(InvoiceSpecifications.byConsumerName(consumerName))
+				.and(InvoiceSpecifications.byConsumerNo(consumerNo))
+				.and(InvoiceSpecifications.paymentStatus(paymentStatus))
+				.and(InvoiceSpecifications.byStatus(invoiceStatus))
+				.and(InvoiceSpecifications.invoiceDateFrom(invoiceDateFrom))
+				.and(InvoiceSpecifications.invoiceDateTo(invoiceDateTo));
+		specification = switch (requester.getRole()) {
+			case ADMIN -> specification;
+			case USER -> specification.and(InvoiceSpecifications.byBranchId(requester.getBranch().getId()));
+			case CUSTOMER -> specification.and(InvoiceSpecifications.byCustomerId(requester.getId()));
 		};
+		List<MsedclInvoice> results = invoices.findAll(specification, Sort.by(Sort.Direction.DESC, "id"));
 		Map<Long, BigDecimal> paidTotals = paymentTotals(results);
 		return results.stream().map(invoice -> invoiceResponse(invoice,
 				paidTotals.getOrDefault(invoice.getId(), BigDecimal.ZERO))).toList();
@@ -84,7 +101,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 	@Transactional
 	public MsedclInvoiceResponse createInvoice(String requestingEmail, MsedclInvoiceRequest request) {
 		MsedclDetail detail = invoiceDetail(request.msedclDetailId(), requestingEmail);
-		if (invoices.existsByMsedclDetail_IdAndBillingDate(detail.getId(), request.billingDate())) {
+		if (invoices.existsByMsedclDetail_IdAndBillingDateAndStatus(detail.getId(), request.billingDate(), InvoiceStatus.OPEN)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "An invoice already exists for this billing date");
 		}
 		MsedclInvoice saved = invoices.saveAndFlush(buildInvoice(detail, request));
@@ -99,10 +116,35 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 	@Override
 	@Transactional
+	public void cancelInvoice(String requestingEmail, Long invoiceId) {
+		Employee requester = employeeByEmail(requestingEmail);
+		if (requester.getRole() == EmployeeRole.CUSTOMER) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Customers cannot cancel invoices");
+		}
+		MsedclInvoice invoice = invoices.findByIdForUpdate(invoiceId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
+		assertInvoiceAccess(requester, invoice);
+		if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Invoice is already cancelled");
+		}
+		invoice.cancel();
+		if (payments.existsByInvoice_Id(invoiceId)) {
+			MsedclInvoice reversal = invoices.saveAndFlush(invoice.createCancellationReversal(LocalDate.now()));
+			reversal.assignInvoiceNo(invoice.getInvoiceNo() + "/CANCEL/" + reversal.getId());
+			invoices.saveAndFlush(reversal);
+			invoice.getMsedclDetail().updateLastInvoiceNo(reversal.getInvoiceNo());
+			logger.info("Cancelled invoice id={} with reversal id={}", invoiceId, reversal.getId());
+		} else {
+			logger.info("Cancelled unpaid invoice id={}", invoiceId);
+		}
+	}
+
+	@Override
+	@Transactional
 	public MsedclInvoiceResponse uploadMsebBill(String requestingEmail, Long invoiceId, MultipartFile file) {
 		MsedclInvoice invoice = authorizedInvoice(invoiceId, requestingEmail);
-		if (invoice.getChargeType() != MsedclChargeType.SOLAR_PLUS_MSEB_BILL_AMOUNT) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This invoice does not include an MSEB bill");
+		if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Cancelled invoices cannot be changed");
 		}
 		if (invoice.getMsebBillStorageName() != null) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "An MSEB bill is already attached to this invoice");
@@ -159,6 +201,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 		MsedclInvoice invoice = invoices.findByIdForUpdate(invoiceId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
 		assertInvoiceAccess(requester, invoice);
+		if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Payments cannot be added to a cancelled invoice");
+		}
 		BigDecimal paidAmount = payments.totalByInvoiceId(invoiceId);
 		BigDecimal balance = invoice.getInvoiceAmount().subtract(paidAmount);
 		if (request.amount().compareTo(balance) > 0) {
@@ -173,6 +218,30 @@ public class InvoiceServiceImpl implements InvoiceService {
 				request.note() == null ? null : request.note().trim()));
 		return payments.findAllByInvoice_IdOrderByPaymentDateDescIdDesc(invoiceId).stream()
 				.map(this::paymentResponse).toList();
+	}
+
+	@Override
+	@Transactional
+	public void cancelPayment(String requestingEmail, Long invoiceId, Long paymentId) {
+		Employee requester = employeeByEmail(requestingEmail);
+		if (requester.getRole() == EmployeeRole.CUSTOMER) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Customers cannot cancel payments");
+		}
+		MsedclInvoice invoice = invoices.findByIdForUpdate(invoiceId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
+		assertInvoiceAccess(requester, invoice);
+		if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Payments on cancelled invoices cannot be changed");
+		}
+		MsedclInvoicePayment payment = payments.findById(paymentId)
+				.filter(item -> item.getInvoice().getId().equals(invoiceId))
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+		if (payment.getEntryType() == InvoicePaymentEntryType.REVERSAL
+				|| payments.existsByReversalOfPayment_Id(paymentId)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "This payment already has a reversal entry");
+		}
+		payments.saveAndFlush(payment.createReversal(LocalDate.now()));
+		logger.info("Added reversal for payment id={} invoiceId={}", paymentId, invoiceId);
 	}
 
 	private MsedclDetail invoiceDetail(Long detailId, String requestingEmail) {
@@ -266,10 +335,14 @@ public class InvoiceServiceImpl implements InvoiceService {
 	}
 
 	private MsedclInvoiceResponse invoiceResponse(MsedclInvoice invoice, BigDecimal paidAmount) {
-		BigDecimal balanceAmount = invoice.getInvoiceAmount().subtract(paidAmount).max(BigDecimal.ZERO);
+		if (invoice.getStatus() == InvoiceStatus.CANCELLED) paidAmount = BigDecimal.ZERO;
+		BigDecimal balanceAmount = invoice.getStatus() == InvoiceStatus.CANCELLED
+				? BigDecimal.ZERO : invoice.getInvoiceAmount().subtract(paidAmount).max(BigDecimal.ZERO);
 		return new MsedclInvoiceResponse(invoice.getId(), invoice.getId(), invoice.getInvoiceNo(), invoice.getCompany().getId(),
 				invoice.getBranch().getId(), invoice.getMsedclDetail().getId(), invoice.getConsumerNo(),
-				invoice.getConsumerName(), invoice.getBillingUnit(), invoice.getChargeType(), invoice.getInvoiceDate(),
+				invoice.getConsumerName(), invoice.getBillingUnit(), invoice.getChargeType(), invoice.getStatus(),
+				invoice.getReversalOfInvoice() == null ? null : invoice.getReversalOfInvoice().getId(),
+				invoice.getOriginalInvoiceNoSnapshot(), invoice.getInvoiceDate(),
 				invoice.getBillingDate(), invoice.getDueDays(), invoice.getDueDate(), invoice.getImportCurrent(), invoice.getImportPrevious(), invoice.getImportConsumption(),
 				invoice.getExportCurrent(), invoice.getExportPrevious(), invoice.getExportConsumption(),
 				invoice.getGenerationCurrent(), invoice.getGenerationPrevious(), invoice.getGenerationConsumption(),
@@ -291,9 +364,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 	private InvoicePaymentResponse paymentResponse(MsedclInvoicePayment payment) {
 		MsedclInvoice invoice = payment.getInvoice();
-		return new InvoicePaymentResponse(payment.getId(), invoice.getId(), invoice.getInvoiceNo(),
+		return new InvoicePaymentResponse(payment.getId(), invoice.getId(), invoice.getInvoiceNo(), invoice.getStatus(),
 				invoice.getConsumerName(), invoice.getConsumerNo(), payment.getPaymentDate(), payment.getAmount(),
-				payment.getPaymentType(), payment.getTransactionNo(), payment.getNote());
+				payment.getPaymentType(), payment.getTransactionNo(), payment.getNote(), payment.getEntryType(),
+				payment.getReversalOfPayment() == null ? null : payment.getReversalOfPayment().getId(),
+				payment.getEntryType() == InvoicePaymentEntryType.PAYMENT
+						&& payments.existsByReversalOfPayment_Id(payment.getId()));
 	}
 
 	private Employee employeeByEmail(String emailAddress) {

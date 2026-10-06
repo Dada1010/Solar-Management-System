@@ -122,6 +122,18 @@ public class ManagementServiceImpl implements ManagementService {
 	}
 
 	@Override
+	@Transactional
+	public void deleteCompany(Long id) {
+		Company company = companies.findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
+		if (branches.existsByCompanyId(id) || effectiveRates.existsByCompany_Id(id)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Companies with branches or effective rates cannot be deleted");
+		}
+		companies.delete(company);
+		logger.info("Deleted company id={}", id);
+	}
+
+	@Override
 	public PageResponse<BranchResponse> branches(int page, int size, String name) {
 		logger.debug("Listing branches page={} size={} nameFilterPresent={}", page, size, name != null && !name.isBlank());
 		Page<BranchResponse> result = branches.findAll(BranchSpecifications.byName(name), pageable(page, size))
@@ -177,6 +189,18 @@ public class ManagementServiceImpl implements ManagementService {
 		Branch updatedBranch = branches.save(branch);
 		logger.info("Updated branch id={} for company id={}", id, company.getId());
 		return branchResponse(updatedBranch);
+	}
+
+	@Override
+	@Transactional
+	public void deleteBranch(Long id) {
+		Branch branch = branches.findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Branch not found"));
+		if (employees.existsByBranch_Id(id) || effectiveRates.existsByBranch_Id(id)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Branches with employees or effective rates cannot be deleted");
+		}
+		branches.delete(branch);
+		logger.info("Deleted branch id={}", id);
 	}
 
 	@Override
@@ -245,6 +269,20 @@ public class ManagementServiceImpl implements ManagementService {
 		Employee updatedEmployee = employees.save(employee);
 		logger.info("Updated employee id={} for branch id={}", id, branch.getId());
 		return employeeResponse(updatedEmployee);
+	}
+
+	@Override
+	@Transactional
+	public void deleteEmployee(Long id) {
+		Employee employee = employees.findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+		boolean hasInvoiceHistory = employee.getMsedclDetails().stream()
+				.anyMatch(detail -> invoiceService.hasInvoicesForDetail(detail.getId()));
+		if (hasInvoiceHistory) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Customers with invoice history cannot be deleted");
+		}
+		employees.delete(employee);
+		logger.info("Deleted employee id={}", id);
 	}
 
 	@Override

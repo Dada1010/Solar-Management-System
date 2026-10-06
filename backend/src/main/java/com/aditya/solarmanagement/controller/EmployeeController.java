@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,6 +32,7 @@ public class EmployeeController {
 	}
 
 	@GetMapping
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<PageResponse<EmployeeResponse>>> employees(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
@@ -40,6 +42,7 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/by-type/{employeeType}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<PageResponse<EmployeeResponse>>> employeesByType(
 			@PathVariable Employee.EmployeeType employeeType,
 			@RequestParam(defaultValue = "0") int page,
@@ -50,13 +53,14 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<EmployeeResponse>> employee(@PathVariable Long id) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Employee retrieved successfully",
 				managementService.employee(id)));
 	}
 
 	@PostMapping
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<EmployeeResponse>> addEmployee(@Valid @RequestBody EmployeeRequest request) {
 		EmployeeResponse data = managementService.addEmployee(request);
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -64,10 +68,17 @@ public class EmployeeController {
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(@PathVariable Long id,
 			@Valid @RequestBody EmployeeRequest request) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Employee updated successfully",
 				managementService.updateEmployee(id, request)));
+	}
+
+	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long id) {
+		managementService.deleteEmployee(id);
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Employee deleted successfully", null));
 	}
 }
