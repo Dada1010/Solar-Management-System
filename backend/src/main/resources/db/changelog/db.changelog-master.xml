@@ -23,4 +23,8 @@
 	<include file="db/changelog/changes/018-add-payment-type.xml"/>
 	<include file="db/changelog/changes/019-add-invoice-cancellation.xml"/>
 	<include file="db/changelog/changes/020-add-payment-reversals.xml"/>
+	<include file="db/changelog/changes/021-reconcile-invoice-cancellation.xml"/>
+	<include file="db/changelog/changes/022-reconcile-payment-reversals.xml"/>
+	<include file="db/changelog/changes/023-drop-legacy-invoice-date-unique.xml"/>
+	<include file="db/changelog/changes/024-drop-legacy-invoice-date-unique.xml"/>
 </databaseChangeLog>

@@ -3,6 +3,7 @@ package com.aditya.solarmanagement.service.impl;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import com.aditya.solarmanagement.dto.EffectiveRateResponse;
 import com.aditya.solarmanagement.dto.MsedclDetailRequest;
 import com.aditya.solarmanagement.dto.MsedclDetailResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
+import com.aditya.solarmanagement.dto.MessageResponse;
 import com.aditya.solarmanagement.models.Branch;
 import com.aditya.solarmanagement.models.Company;
 import com.aditya.solarmanagement.models.Employee;
@@ -283,6 +285,20 @@ public class ManagementServiceImpl implements ManagementService {
 		}
 		employees.delete(employee);
 		logger.info("Deleted employee id={}", id);
+	}
+
+	@Override
+	@Transactional
+	public MessageResponse resetEmployeePassword(Long id) {
+		Employee employee = employees.findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+		String temporaryPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+		employee.setPasswordHash(passwordEncoder.encode(temporaryPassword));
+		employee.setMustChangePassword(true);
+		employees.save(employee);
+		logger.info("Reset password for employee id={} type={}", id, employee.getEmployeeType());
+		return new MessageResponse("Temporary password: " + temporaryPassword
+				+ ". The account must set a new password after signing in.");
 	}
 
 	@Override

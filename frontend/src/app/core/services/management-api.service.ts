@@ -12,6 +12,7 @@ import {
   EmployeePayload,
   EmployeeRecord,
   EmployeeType,
+  MessageResult,
   EffectiveRateOwnerType,
   EffectiveRatePayload,
   EffectiveRateRecord,
@@ -102,6 +103,10 @@ export class ManagementApiService {
 
   deleteEmployee(id: number): Observable<void> {
     return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/employees/${id}`).pipe(map(unwrap));
+  }
+
+  resetEmployeePassword(id: number): Observable<MessageResult> {
+    return this.post(`/employees/${id}/reset-password`, {});
   }
 
   customerMsedclDetails(customerId: number): Observable<MsedclDetailRecord[]> {

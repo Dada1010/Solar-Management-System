@@ -128,12 +128,24 @@ public class InvoiceServiceImpl implements InvoiceService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Invoice is already cancelled");
 		}
 		invoice.cancel();
-		if (payments.existsByInvoice_Id(invoiceId)) {
-			MsedclInvoice reversal = invoices.saveAndFlush(invoice.createCancellationReversal(LocalDate.now()));
+		List<MsedclInvoicePayment> invoicePayments = payments.findAllByInvoice_IdOrderByPaymentDateDescIdDesc(invoiceId);
+		if (!invoicePayments.isEmpty()) {
+			LocalDate cancellationDate = LocalDate.now();
+			MsedclInvoice reversal = invoices.saveAndFlush(invoice.createCancellationReversal(cancellationDate));
 			reversal.assignInvoiceNo(invoice.getInvoiceNo() + "/CANCEL/" + reversal.getId());
 			invoices.saveAndFlush(reversal);
 			invoice.getMsedclDetail().updateLastInvoiceNo(reversal.getInvoiceNo());
-			logger.info("Cancelled invoice id={} with reversal id={}", invoiceId, reversal.getId());
+			int paymentReversals = 0;
+			for (MsedclInvoicePayment payment : invoicePayments) {
+				if (payment.getEntryType() == InvoicePaymentEntryType.PAYMENT
+						&& !payments.existsByReversalOfPayment_Id(payment.getId())) {
+					payments.save(payment.createReversal(cancellationDate));
+					paymentReversals++;
+				}
+			}
+			payments.flush();
+			logger.info("Cancelled invoice id={} with reversal id={} paymentReversals={}", invoiceId, reversal.getId(),
+					paymentReversals);
 		} else {
 			logger.info("Cancelled unpaid invoice id={}", invoiceId);
 		}

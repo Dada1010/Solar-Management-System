@@ -1,0 +1,20 @@
+{
+  "name": "solar-management-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capacitor mobile container for the Aditya Solar Management Angular app",
+  "scripts": {
+    "build:web": "npm --prefix ../frontend run build -- --configuration mobile",
+    "sync": "npm run build:web && cap sync android",
+    "add:android": "cap add android",
+    "open:android": "cap open android",
+    "run:android": "npm run sync && cap run android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}

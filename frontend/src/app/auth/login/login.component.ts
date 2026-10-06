@@ -24,7 +24,7 @@ export class LoginComponent {
     private readonly messages: MessageService
   ) {
     if (auth.isAuthenticated) {
-      void router.navigate([auth.mustChangePassword ? '/first-login' : '/companies']);
+      void router.navigate([auth.mustChangePassword ? '/first-login' : '/dashboard']);
     }
   }
 
@@ -38,7 +38,7 @@ export class LoginComponent {
     this.auth.login(emailAddress, password).subscribe({
       next: (session) => {
         this.loading = false;
-        void this.router.navigate([session.mustChangePassword ? '/first-login' : '/companies']);
+        void this.router.navigate([session.mustChangePassword ? '/first-login' : '/dashboard']);
       },
       error: (error: unknown) => {
         this.loading = false;

@@ -48,6 +48,18 @@
 		</section>
 	</ng-container>
 	<p-menu #invoiceMenu [model]="invoiceActionItems" [popup]="true" appendTo="body"></p-menu>
+	<p-dialog [(visible)]="invoiceCancelDialogVisible" header="Cancel invoice?" [modal]="true" [draggable]="false"
+		[closable]="!cancellingInvoice" [dismissableMask]="!cancellingInvoice" [closeOnEscape]="!cancellingInvoice"
+		(onHide)="dismissInvoiceCancellation()" [style]="{ width: 'min(30rem, 94vw)' }">
+		<div class="cancel-confirmation">
+			<p>You are cancelling invoice <strong>{{ invoicePendingCancellation?.invoiceNo }}</strong>.</p>
+			<p>The original record will be retained. If it has payment history, a reversal invoice will be added.</p>
+		</div>
+		<ng-template pTemplate="footer">
+			<p-button label="Keep invoice" severity="secondary" [outlined]="true" (onClick)="dismissInvoiceCancellation()" [disabled]="cancellingInvoice"></p-button>
+			<p-button label="Cancel invoice" icon="pi pi-ban" severity="danger" (onClick)="confirmInvoiceCancellation()" [loading]="cancellingInvoice"></p-button>
+		</ng-template>
+	</p-dialog>
 	<input #msebBillPicker class="file-picker" type="file" accept="application/pdf,image/jpeg,image/png" aria-label="Choose MSEB bill" (change)="uploadSelectedMsebBill($event)">
 	<p-dialog [(visible)]="paymentDialogVisible" [header]="'Payment history' + (selectedPaymentInvoice ? ' · ' + selectedPaymentInvoice.invoiceNo : '')" [modal]="true" [draggable]="false" [style]="{ width: 'min(46rem, 96vw)' }">
 		<div class="payment-summary" *ngIf="selectedPaymentInvoice as invoice"><div><span>Invoice total</span><strong>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Paid amount</span><strong>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Balance amount</span><strong>{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>

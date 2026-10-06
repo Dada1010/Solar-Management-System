@@ -36,6 +36,12 @@ export class InvoiceComponent implements OnDestroy {
 	savingPayment = false;
 	paymentDialogVisible = false;
 	paymentEntryVisible = false;
+	invoiceCancelDialogVisible = false;
+	cancellingInvoice = false;
+	invoicePendingCancellation: MsedclInvoiceRecord | null = null;
+	paymentReversalDialogVisible = false;
+	reversingPayment = false;
+	paymentPendingReversal: InvoicePaymentRecord | null = null;
 	formVisible = false;
 	printRecord: MsedclInvoiceRecord | null = null;
 	uploadingInvoiceId: number | null = null;
@@ -286,28 +292,67 @@ export class InvoiceComponent implements OnDestroy {
 	}
 
 	cancelInvoice(invoice: MsedclInvoiceRecord): void {
-		if (!this.canCancelRecords || invoice.id === null || !window.confirm(`Cancel invoice ${invoice.invoiceNo}? A reversal record will be added when payments exist.`)) return;
+		if (!this.canCancelRecords || invoice.id === null || invoice.status !== 'OPEN'
+			|| invoice.reversalOfInvoiceId !== null) return;
+		this.invoicePendingCancellation = invoice;
+		this.invoiceCancelDialogVisible = true;
+	}
+
+	confirmInvoiceCancellation(): void {
+		const invoice = this.invoicePendingCancellation;
+		if (!this.canCancelRecords || invoice?.id == null) return;
+		this.cancellingInvoice = true;
 		this.api.cancelInvoice(invoice.id).subscribe({
 			next: () => {
+				this.cancellingInvoice = false;
+				this.dismissInvoiceCancellation();
 				this.loadInvoices();
 				this.messages.add({ severity: 'success', summary: 'Invoice cancelled', detail: 'The original invoice was retained.' });
 			},
-			error: (error: unknown) => this.showError('Could not cancel invoice', error)
+			error: (error: unknown) => {
+				this.cancellingInvoice = false;
+				this.showError('Could not cancel invoice', error);
+			}
 		});
+	}
+
+	dismissInvoiceCancellation(): void {
+		if (this.cancellingInvoice) return;
+		this.invoiceCancelDialogVisible = false;
+		this.invoicePendingCancellation = null;
 	}
 
 	cancelPayment(payment: InvoicePaymentRecord): void {
 		const invoice = this.selectedPaymentInvoice;
-		if (!this.canCancelRecords || !invoice || payment.entryType !== 'PAYMENT' || payment.reversed || invoice.status !== 'OPEN'
-			|| !window.confirm(`Add a reversal for payment ${payment.id}? The original payment will be retained.`)) return;
+		if (!this.canCancelRecords || !invoice || payment.entryType !== 'PAYMENT' || payment.reversed || invoice.status !== 'OPEN') return;
+		this.paymentPendingReversal = payment;
+		this.paymentReversalDialogVisible = true;
+	}
+
+	confirmPaymentReversal(): void {
+		const payment = this.paymentPendingReversal;
+		if (!this.canCancelRecords || !payment || !this.selectedPaymentInvoice
+			|| this.selectedPaymentInvoice.status !== 'OPEN') return;
+		this.reversingPayment = true;
 		this.api.cancelInvoicePayment(payment.invoiceId, payment.id).subscribe({
 			next: () => {
-				this.openPaymentHistory(invoice);
+				this.reversingPayment = false;
+				this.dismissPaymentReversal();
+				if (this.selectedPaymentInvoice) this.openPaymentHistory(this.selectedPaymentInvoice);
 				this.loadInvoices();
 				this.messages.add({ severity: 'success', summary: 'Payment reversed', detail: 'A reversal entry was added.' });
 			},
-			error: (error: unknown) => this.showError('Could not reverse payment', error)
+			error: (error: unknown) => {
+				this.reversingPayment = false;
+				this.showError('Could not reverse payment', error);
+			}
 		});
+	}
+
+	dismissPaymentReversal(): void {
+		if (this.reversingPayment) return;
+		this.paymentReversalDialogVisible = false;
+		this.paymentPendingReversal = null;
 	}
 
 	openMsebBillPicker(invoice: MsedclInvoiceRecord): void {

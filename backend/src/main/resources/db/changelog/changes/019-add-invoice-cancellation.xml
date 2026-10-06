@@ -4,6 +4,16 @@
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 	<changeSet id="019-add-invoice-cancellation" author="aditya">
+		<validCheckSum>ANY</validCheckSum>
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<or>
+					<columnExists tableName="msedcl_invoices" columnName="invoice_status"/>
+					<columnExists tableName="msedcl_invoices" columnName="reversal_of_invoice_id"/>
+					<columnExists tableName="msedcl_invoices" columnName="original_invoice_no_snapshot"/>
+				</or>
+			</not>
+		</preConditions>
 		<addColumn tableName="msedcl_invoices">
 			<column name="invoice_status" type="VARCHAR(20)"/>
 			<column name="reversal_of_invoice_id" type="BIGINT"/>

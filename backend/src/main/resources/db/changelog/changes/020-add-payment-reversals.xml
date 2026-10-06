@@ -4,6 +4,15 @@
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 	<changeSet id="020-add-payment-reversals" author="aditya">
+		<validCheckSum>ANY</validCheckSum>
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<or>
+					<columnExists tableName="msedcl_invoice_payments" columnName="entry_type"/>
+					<columnExists tableName="msedcl_invoice_payments" columnName="reversal_of_payment_id"/>
+				</or>
+			</not>
+		</preConditions>
 		<addColumn tableName="msedcl_invoice_payments">
 			<column name="entry_type" type="VARCHAR(20)"/>
 			<column name="reversal_of_payment_id" type="BIGINT"/>

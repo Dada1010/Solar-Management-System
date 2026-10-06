@@ -13,6 +13,7 @@ import com.aditya.solarmanagement.dto.EffectiveRateResponse;
 import com.aditya.solarmanagement.dto.MsedclDetailRequest;
 import com.aditya.solarmanagement.dto.MsedclDetailResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
+import com.aditya.solarmanagement.dto.MessageResponse;
 import com.aditya.solarmanagement.models.Employee;
 import com.aditya.solarmanagement.models.EffectiveRateOwnerType;
 
@@ -34,6 +35,7 @@ public interface ManagementService {
 	EmployeeResponse addEmployee(EmployeeRequest request);
 	EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
 	void deleteEmployee(Long id);
+	MessageResponse resetEmployeePassword(Long id);
 	List<MsedclDetailResponse> consumerDetails(String requestingEmail, String name, String mobileNo, String consumerNo);
 	List<MsedclDetailResponse> msedclDetails(Long customerId, String requestingEmail, String name, String mobileNo,
 			String consumerNo);

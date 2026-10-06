@@ -233,6 +233,16 @@ export class PeopleComponent implements OnDestroy {
 		});
 	}
 
+	resetPassword(person: EmployeeRecord): void {
+		const label = this.employeeType === 'CUSTOMER' ? 'customer' : 'employee';
+		if (!this.canDelete || !window.confirm(`Reset the password for ${person.firstName} ${person.lastName}? They must change it after signing in.`)) return;
+		this.api.resetEmployeePassword(person.id).subscribe({
+			next: (result) => this.messages.add({ severity: 'success', summary: 'Password reset',
+				detail: result.message, life: 15000 }),
+			error: (error: unknown) => this.handleError(`Could not reset ${label} password`, error)
+		});
+	}
+
 	private loadMsedclDetails(): void {
 		if (!this.selectedCustomer) return;
 		this.msedclLoading = true;

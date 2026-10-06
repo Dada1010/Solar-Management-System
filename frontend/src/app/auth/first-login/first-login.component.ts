@@ -39,7 +39,7 @@ export class FirstLoginComponent {
     this.auth.changePassword(currentPassword, newPassword).subscribe({
       next: () => {
         this.loading = false;
-        void this.router.navigate(['/companies']);
+        void this.router.navigate(['/dashboard']);
       },
       error: (error: unknown) => {
         this.loading = false;

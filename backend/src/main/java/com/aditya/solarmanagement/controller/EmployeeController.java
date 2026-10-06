@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.aditya.solarmanagement.dto.ApiResponse;
 import com.aditya.solarmanagement.dto.EmployeeRequest;
 import com.aditya.solarmanagement.dto.EmployeeResponse;
+import com.aditya.solarmanagement.dto.MessageResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
 import com.aditya.solarmanagement.models.Employee;
 import com.aditya.solarmanagement.service.ManagementService;
@@ -80,5 +81,12 @@ public class EmployeeController {
 	public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long id) {
 		managementService.deleteEmployee(id);
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Employee deleted successfully", null));
+	}
+
+	@PostMapping("/{id}/reset-password")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<MessageResponse>> resetPassword(@PathVariable Long id) {
+		MessageResponse data = managementService.resetEmployeePassword(id);
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Password reset successfully", data));
 	}
 }

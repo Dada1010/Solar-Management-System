@@ -13,6 +13,9 @@ import { ManagementApiService } from '../../core/services/management-api.service
 export class PaymentDetailsComponent {
 	rows: InvoicePaymentRecord[] = [];
 	loading = false;
+	reverseDialogVisible = false;
+	reversingPayment = false;
+	pendingReversal: InvoicePaymentRecord | null = null;
 
 	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService,
 		readonly auth: AuthService) {
@@ -24,16 +27,34 @@ export class PaymentDetailsComponent {
 	}
 
 	cancelPayment(payment: InvoicePaymentRecord): void {
-		if (payment.entryType !== 'PAYMENT' || payment.reversed || payment.invoiceStatus !== 'OPEN'
-			|| !window.confirm(`Add a reversal for payment ${payment.id}? The original payment will be retained.`)) return;
+		if (!this.canCancelPayments || payment.entryType !== 'PAYMENT' || payment.reversed || payment.invoiceStatus !== 'OPEN') return;
+		this.pendingReversal = payment;
+		this.reverseDialogVisible = true;
+	}
+
+	confirmPaymentReversal(): void {
+		const payment = this.pendingReversal;
+		if (!this.canCancelPayments || !payment || payment.invoiceStatus !== 'OPEN') return;
+		this.reversingPayment = true;
 		this.api.cancelInvoicePayment(payment.invoiceId, payment.id).subscribe({
 			next: () => {
+				this.reversingPayment = false;
+				this.dismissPaymentReversal();
 				this.load();
 				this.messages.add({ severity: 'success', summary: 'Payment reversed', detail: 'A reversal entry was added.' });
 			},
-			error: (error: unknown) => this.messages.add({ severity: 'error', summary: 'Could not reverse payment',
-				detail: this.errorMessage(error) })
+			error: (error: unknown) => {
+				this.reversingPayment = false;
+				this.messages.add({ severity: 'error', summary: 'Could not reverse payment',
+					detail: this.errorMessage(error) });
+			}
 		});
+	}
+
+	dismissPaymentReversal(): void {
+		if (this.reversingPayment) return;
+		this.reverseDialogVisible = false;
+		this.pendingReversal = null;
 	}
 
 	private load(): void {
