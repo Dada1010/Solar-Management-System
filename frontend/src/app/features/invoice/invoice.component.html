@@ -60,6 +60,18 @@
 			<p-button label="Cancel invoice" icon="pi pi-ban" severity="danger" (onClick)="confirmInvoiceCancellation()" [loading]="cancellingInvoice"></p-button>
 		</ng-template>
 	</p-dialog>
+	<p-dialog [(visible)]="paymentReversalDialogVisible" header="Reverse payment?" [modal]="true" [draggable]="false"
+		[closable]="!reversingPayment" [dismissableMask]="!reversingPayment" [closeOnEscape]="!reversingPayment"
+		(onHide)="dismissPaymentReversal()" [style]="{ width: 'min(30rem, 94vw)' }">
+		<div class="cancel-confirmation" *ngIf="paymentPendingReversal as payment">
+			<p>You are reversing payment <strong>#{{ payment.id }}</strong> for <strong>{{ payment.amount | currency:'INR':'symbol':'1.2-2' }}</strong>.</p>
+			<p>The original payment will remain in history and a negative reversal entry will be added.</p>
+		</div>
+		<ng-template pTemplate="footer">
+			<p-button label="Keep payment" severity="secondary" [outlined]="true" (onClick)="dismissPaymentReversal()" [disabled]="reversingPayment"></p-button>
+			<p-button label="Add reversal" icon="pi pi-replay" severity="danger" (onClick)="confirmPaymentReversal()" [loading]="reversingPayment"></p-button>
+		</ng-template>
+	</p-dialog>
 	<input #msebBillPicker class="file-picker" type="file" accept="application/pdf,image/jpeg,image/png" aria-label="Choose MSEB bill" (change)="uploadSelectedMsebBill($event)">
 	<p-dialog [(visible)]="paymentDialogVisible" [header]="'Payment history' + (selectedPaymentInvoice ? ' · ' + selectedPaymentInvoice.invoiceNo : '')" [modal]="true" [draggable]="false" [style]="{ width: 'min(46rem, 96vw)' }">
 		<div class="payment-summary" *ngIf="selectedPaymentInvoice as invoice"><div><span>Invoice total</span><strong>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Paid amount</span><strong>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Balance amount</span><strong>{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>

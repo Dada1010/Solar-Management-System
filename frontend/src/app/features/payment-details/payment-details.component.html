@@ -9,4 +9,16 @@
 			<ng-template pTemplate="emptymessage"><tr><td colspan="10" class="empty-cell">No payments recorded yet.</td></tr></ng-template>
 		</p-table>
 	</section>
+	<p-dialog [(visible)]="reverseDialogVisible" header="Reverse payment?" [modal]="true" [draggable]="false"
+		[closable]="!reversingPayment" [dismissableMask]="!reversingPayment" [closeOnEscape]="!reversingPayment"
+		(onHide)="dismissPaymentReversal()" [style]="{ width: 'min(30rem, 94vw)' }">
+		<div class="reverse-confirmation" *ngIf="pendingReversal as payment">
+			<p>You are reversing payment <strong>#{{ payment.id }}</strong> for <strong>{{ payment.amount | currency:'INR':'symbol':'1.2-2' }}</strong>.</p>
+			<p>The original payment will remain in history and a negative reversal entry will be added.</p>
+		</div>
+		<ng-template pTemplate="footer">
+			<p-button label="Keep payment" severity="secondary" [outlined]="true" (onClick)="dismissPaymentReversal()" [disabled]="reversingPayment"></p-button>
+			<p-button label="Add reversal" icon="pi pi-replay" severity="danger" (onClick)="confirmPaymentReversal()" [loading]="reversingPayment"></p-button>
+		</ng-template>
+	</p-dialog>
 </section>
