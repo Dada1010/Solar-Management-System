@@ -20,7 +20,7 @@ export class PaymentDetailsComponent {
 	}
 
 	get canCancelPayments(): boolean {
-		return this.auth.user?.role === 'ADMIN' || this.auth.user?.role === 'USER';
+		return this.auth.user?.role === 'ADMIN';
 	}
 
 	cancelPayment(payment: InvoicePaymentRecord): void {

@@ -80,6 +80,14 @@ export class PeopleComponent implements OnDestroy {
 		return this.employeeType === 'CUSTOMER' ? 'Filter by customer name' : 'Filter by employee name';
 	}
 
+	get canWrite(): boolean {
+		return this.auth.user?.role === 'ADMIN' || this.auth.user?.role === 'USER';
+	}
+
+	get canDelete(): boolean {
+		return this.auth.user?.role === 'ADMIN';
+	}
+
 	ngOnDestroy(): void {
 		this.routeSubscription.unsubscribe();
 	}
@@ -123,12 +131,14 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	create(): void {
+		if (!this.canWrite) return;
 		this.editingId = null;
 		this.form.reset({ firstName: '', lastName: '', emailAddress: '', mobileNo: '', address: '', branchId: this.branches[0]?.id ?? null });
 		this.dialogVisible = true;
 	}
 
 	edit(person: EmployeeRecord): void {
+		if (!this.canWrite) return;
 		this.loading = true;
 		this.api.employee(person.id).subscribe({
 			next: (record) => {
@@ -157,6 +167,7 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	editMsedclDetail(detail: MsedclDetailRecord): void {
+		if (!this.canWrite) return;
 		this.editingMsedclId = detail.id;
 		this.msedclForm.patchValue({
 			billingUnit: detail.billingUnit,
@@ -175,7 +186,7 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	saveMsedclDetail(): void {
-		if (!this.selectedCustomer || this.msedclForm.invalid) {
+		if (!this.canWrite || !this.selectedCustomer || this.msedclForm.invalid) {
 			this.msedclForm.markAllAsTouched();
 			return;
 		}
@@ -199,7 +210,7 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	removeMsedclDetail(detail: MsedclDetailRecord): void {
-		if (!this.selectedCustomer || !window.confirm(`Remove consumer ${detail.consumerNo}?`)) return;
+		if (!this.canDelete || !this.selectedCustomer || !window.confirm(`Remove consumer ${detail.consumerNo}?`)) return;
 		this.api.deleteCustomerMsedclDetail(this.selectedCustomer.id, detail.id).subscribe({
 			next: () => {
 				if (this.editingMsedclId === detail.id) this.resetMsedclForm();
@@ -207,6 +218,18 @@ export class PeopleComponent implements OnDestroy {
 				this.loadMsedclDetails();
 			},
 			error: (error: unknown) => this.handleError('Could not remove MSEDCL detail', error)
+		});
+	}
+
+	removePerson(person: EmployeeRecord): void {
+		const label = this.employeeType === 'CUSTOMER' ? 'customer' : 'employee';
+		if (!this.canDelete || !window.confirm(`Delete ${label} ${person.firstName} ${person.lastName}?`)) return;
+		this.api.deleteEmployee(person.id).subscribe({
+			next: () => {
+				this.messages.add({ severity: 'success', summary: 'Deleted', detail: `${label} deleted.` });
+				this.loadPage();
+			},
+			error: (error: unknown) => this.handleError('Could not delete person', error)
 		});
 	}
 
@@ -226,7 +249,7 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	save(): void {
-		if (this.form.invalid) {
+		if (!this.canWrite || this.form.invalid) {
 			this.form.markAllAsTouched();
 			return;
 		}

@@ -6,6 +6,7 @@ import {
 	EffectiveRatePayload,
 	EffectiveRateRecord
 } from '../../core/models/api.models';
+import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
 
 @Component({
@@ -30,7 +31,16 @@ export class EffectiveRateManagerComponent {
 		ratePerUnit: [0, [Validators.required, Validators.min(0)]]
 	});
 
-	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService) {}
+	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService,
+		readonly auth: AuthService) {}
+
+	get canWrite(): boolean {
+		return this.auth.user?.role === 'ADMIN' || this.auth.user?.role === 'USER';
+	}
+
+	get canDelete(): boolean {
+		return this.auth.user?.role === 'ADMIN';
+	}
 
 	open(): void {
 		this.dialogVisible = true;
@@ -39,6 +49,7 @@ export class EffectiveRateManagerComponent {
 	}
 
 	edit(rate: EffectiveRateRecord): void {
+		if (!this.canWrite) return;
 		this.editingId = rate.id;
 		this.form.patchValue({ startDate: rate.startDate, ratePerUnit: rate.ratePerUnit });
 	}
@@ -49,7 +60,7 @@ export class EffectiveRateManagerComponent {
 	}
 
 	save(): void {
-		if (this.form.invalid) {
+		if (!this.canWrite || this.form.invalid) {
 			this.form.markAllAsTouched();
 			return;
 		}
@@ -73,7 +84,7 @@ export class EffectiveRateManagerComponent {
 	}
 
 	remove(rate: EffectiveRateRecord): void {
-		if (!window.confirm(`Remove the rate starting ${rate.startDate}?`)) return;
+		if (!this.canDelete || !window.confirm(`Remove the rate starting ${rate.startDate}?`)) return;
 		this.api.deleteEffectiveRate(this.ownerType, this.ownerId, rate.id).subscribe({
 			next: () => {
 				if (this.editingId === rate.id) this.resetForm();

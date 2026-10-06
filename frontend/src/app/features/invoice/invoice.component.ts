@@ -80,6 +80,10 @@ export class InvoiceComponent implements OnDestroy {
 		return this.canCreate;
 	}
 
+	get canCancelRecords(): boolean {
+		return this.auth.user?.role === 'ADMIN';
+	}
+
 	applyInvoiceFilters(): void {
 		if (this.invoiceDateFrom && this.invoiceDateTo && this.invoiceDateFrom > this.invoiceDateTo) {
 			this.messages.add({ severity: 'error', summary: 'Invalid date range', detail: 'From date must be on or before To date.' });
@@ -275,14 +279,14 @@ export class InvoiceComponent implements OnDestroy {
 		if (this.canRecordPayment && invoice.status === 'OPEN' && invoice.balanceAmount > 0) {
 			this.invoiceActionItems.push({ label: 'Add payment', icon: 'pi pi-plus-circle', command: () => this.openPaymentHistory(invoice, true) });
 		}
-		if (this.canCreate && invoice.status === 'OPEN' && invoice.reversalOfInvoiceId === null) {
+		if (this.canCancelRecords && invoice.status === 'OPEN' && invoice.reversalOfInvoiceId === null) {
 			this.invoiceActionItems.push({ label: 'Cancel invoice', icon: 'pi pi-ban', command: () => this.cancelInvoice(invoice) });
 		}
 		menu.toggle(event);
 	}
 
 	cancelInvoice(invoice: MsedclInvoiceRecord): void {
-		if (invoice.id === null || !window.confirm(`Cancel invoice ${invoice.invoiceNo}? A reversal record will be added when payments exist.`)) return;
+		if (!this.canCancelRecords || invoice.id === null || !window.confirm(`Cancel invoice ${invoice.invoiceNo}? A reversal record will be added when payments exist.`)) return;
 		this.api.cancelInvoice(invoice.id).subscribe({
 			next: () => {
 				this.loadInvoices();
@@ -294,7 +298,7 @@ export class InvoiceComponent implements OnDestroy {
 
 	cancelPayment(payment: InvoicePaymentRecord): void {
 		const invoice = this.selectedPaymentInvoice;
-		if (!invoice || payment.entryType !== 'PAYMENT' || payment.reversed || invoice.status !== 'OPEN'
+		if (!this.canCancelRecords || !invoice || payment.entryType !== 'PAYMENT' || payment.reversed || invoice.status !== 'OPEN'
 			|| !window.confirm(`Add a reversal for payment ${payment.id}? The original payment will be retained.`)) return;
 		this.api.cancelInvoicePayment(payment.invoiceId, payment.id).subscribe({
 			next: () => {
