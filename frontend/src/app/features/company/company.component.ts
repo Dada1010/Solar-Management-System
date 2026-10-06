@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { Component } from '@angular/core';
+import { MenuItem, MessageService } from 'primeng/api';
+import { Menu } from 'primeng/menu';
 import { CompanyPayload, CompanyRecord } from '../../core/models/api.models';
 import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
@@ -12,22 +12,16 @@ import { ManagementApiService } from '../../core/services/management-api.service
 	standalone: false
 })
 export class CompanyComponent {
-	private readonly formBuilder = inject(FormBuilder);
 	rows: CompanyRecord[] = [];
 	loading = false;
 	saving = false;
-	dialogVisible = false;
+	editorVisible = false;
 	editingId: number | null = null;
+	editingCompany: CompanyRecord | null = null;
+	companyActionItems: MenuItem[] = [];
 	page = 0;
 	size = 10;
 	totalRecords = 0;
-	readonly form = this.formBuilder.nonNullable.group({
-		name: ['', [Validators.required, Validators.maxLength(160)]],
-		industry: ['', Validators.maxLength(120)],
-		address: ['', Validators.maxLength(255)],
-		mobileNo: [''],
-		emailAddress: ['', Validators.email]
-	});
 
 	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService,
 		readonly auth: AuthService) {
@@ -62,8 +56,8 @@ export class CompanyComponent {
 
 	create(): void {
 		this.editingId = null;
-		this.form.reset({ name: '', industry: '', address: '', mobileNo: '', emailAddress: '' });
-		this.dialogVisible = true;
+		this.editingCompany = null;
+		this.editorVisible = true;
 	}
 
 	edit(company: CompanyRecord): void {
@@ -71,15 +65,9 @@ export class CompanyComponent {
 		this.api.company(company.id).subscribe({
 			next: (record) => {
 				this.editingId = record.id;
-				this.form.patchValue({
-					name: record.name,
-					industry: record.industry ?? '',
-					address: record.address ?? '',
-					mobileNo: record.mobileNo ?? '',
-					emailAddress: record.emailAddress ?? ''
-				});
+				this.editingCompany = record;
 				this.loading = false;
-				this.dialogVisible = true;
+				this.editorVisible = true;
 			},
 			error: (error: unknown) => this.handleError('Could not load company', error)
 		});
@@ -96,20 +84,26 @@ export class CompanyComponent {
 		});
 	}
 
-	save(): void {
-		if (this.form.invalid) {
-			this.form.markAllAsTouched();
-			return;
+	openActions(company: CompanyRecord, event: Event, menu: Menu): void {
+		this.companyActionItems = [
+			{ label: 'Update', icon: 'pi pi-pencil', command: () => this.edit(company) }
+		];
+		if (this.canDelete) {
+			this.companyActionItems.push({ label: 'Delete', icon: 'pi pi-trash', command: () => this.remove(company) });
 		}
+		menu.toggle(event);
+	}
+
+	saveCompany(payload: CompanyPayload): void {
 		this.saving = true;
-		const payload: CompanyPayload = this.form.getRawValue();
 		const request = this.editingId === null
 			? this.api.createCompany(payload)
 			: this.api.updateCompany(this.editingId, payload);
 		request.subscribe({
 			next: () => {
 				this.saving = false;
-				this.dialogVisible = false;
+				this.editorVisible = false;
+				this.editingCompany = null;
 				this.page = 0;
 				this.messages.add({ severity: 'success', summary: 'Saved', detail: 'Company saved successfully.' });
 				this.loadPage();
@@ -119,6 +113,11 @@ export class CompanyComponent {
 				this.handleError('Could not save company', error);
 			}
 		});
+	}
+
+	closeEditor(): void {
+		this.editorVisible = false;
+		this.editingCompany = null;
 	}
 
 	private handleError(summary: string, error: unknown): void {

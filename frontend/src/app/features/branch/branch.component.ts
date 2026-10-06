@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { Component } from '@angular/core';
+import { MenuItem, MessageService } from 'primeng/api';
+import { Menu } from 'primeng/menu';
 import { Observable, forkJoin, map, of } from 'rxjs';
 import { BranchPayload, BranchRecord, CompanyRecord } from '../../core/models/api.models';
 import { AuthService } from '../../core/services/auth.service';
@@ -13,26 +13,19 @@ import { ManagementApiService } from '../../core/services/management-api.service
   standalone: false
 })
 export class BranchComponent {
-  private readonly formBuilder = inject(FormBuilder);
   rows: BranchRecord[] = [];
   companies: CompanyRecord[] = [];
   loading = false;
   saving = false;
-  dialogVisible = false;
+  editorVisible = false;
   editingId: number | null = null;
+  editingBranch: BranchRecord | null = null;
+  branchActionItems: MenuItem[] = [];
   page = 0;
   size = 10;
   totalRecords = 0;
   nameFilter = '';
   private companiesLoaded = false;
-  readonly form = this.formBuilder.group({
-    name: this.formBuilder.nonNullable.control('', [Validators.required, Validators.maxLength(160)]),
-    address: this.formBuilder.nonNullable.control(''),
-    mobileNo: this.formBuilder.nonNullable.control(''),
-    emailAddress: this.formBuilder.nonNullable.control('', Validators.email),
-    companyId: this.formBuilder.control<number | null>(null, Validators.required)
-  });
-
   constructor(
     private readonly api: ManagementApiService,
     readonly auth: AuthService,
@@ -59,11 +52,6 @@ export class BranchComponent {
 
   get canDelete(): boolean {
     return this.auth.user?.role === 'ADMIN';
-  }
-
-  get selectedCompanyName(): string {
-    const id = this.form.controls.companyId.value;
-    return this.companies.find((company) => company.id === id)?.name ?? this.auth.user?.companyName ?? '';
   }
 
   loadPage(): void {
@@ -104,11 +92,8 @@ export class BranchComponent {
 
   create(): void {
     this.editingId = null;
-    this.form.reset({
-      name: '', address: '', mobileNo: '', emailAddress: '',
-      companyId: this.auth.user?.companyId ?? this.companies[0]?.id ?? null
-    });
-    this.dialogVisible = true;
+    this.editingBranch = null;
+    this.editorVisible = true;
   }
 
   edit(branch: BranchRecord): void {
@@ -116,15 +101,9 @@ export class BranchComponent {
     this.api.branch(branch.id).subscribe({
       next: (record) => {
         this.editingId = record.id;
-        this.form.patchValue({
-          name: record.name,
-          address: record.address ?? '',
-          mobileNo: record.mobileNo ?? '',
-          emailAddress: record.emailAddress ?? '',
-          companyId: record.companyId
-        });
+        this.editingBranch = record;
         this.loading = false;
-        this.dialogVisible = true;
+        this.editorVisible = true;
       },
       error: (error: unknown) => this.handleError('Could not load branch', error)
     });
@@ -141,23 +120,26 @@ export class BranchComponent {
     });
   }
 
-  save(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+  openActions(branch: BranchRecord, event: Event, menu: Menu): void {
+    this.branchActionItems = [
+      { label: 'Update', icon: 'pi pi-pencil', command: () => this.edit(branch) }
+    ];
+    if (this.canDelete) {
+      this.branchActionItems.push({ label: 'Delete', icon: 'pi pi-trash', command: () => this.remove(branch) });
     }
+    menu.toggle(event);
+  }
+
+  saveBranch(payload: BranchPayload): void {
     this.saving = true;
-    const payload: BranchPayload = {
-      ...this.form.getRawValue(),
-      companyId: Number(this.form.controls.companyId.value)
-    };
     const request = this.editingId === null
       ? this.api.createBranch(payload)
       : this.api.updateBranch(this.editingId, payload);
     request.subscribe({
       next: () => {
         this.saving = false;
-        this.dialogVisible = false;
+        this.editorVisible = false;
+        this.editingBranch = null;
         this.page = 0;
         this.messages.add({ severity: 'success', summary: 'Saved', detail: 'Branch saved successfully.' });
         this.loadPage();

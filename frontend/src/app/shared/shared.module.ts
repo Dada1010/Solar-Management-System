@@ -14,6 +14,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { EffectiveRateManagerComponent } from './effective-rate-manager/effective-rate-manager.component';
+import { ResponsiveTableDirective } from './responsive-table.directive';
 
 const PRIME_MODULES = [
   AvatarModule,
@@ -31,8 +32,9 @@ const PRIME_MODULES = [
 ];
 
 @NgModule({
-	declarations: [EffectiveRateManagerComponent],
+  declarations: [EffectiveRateManagerComponent, ResponsiveTableDirective],
   imports: [CommonModule, FormsModule, ReactiveFormsModule, ...PRIME_MODULES],
-  exports: [CommonModule, FormsModule, ReactiveFormsModule, ...PRIME_MODULES, EffectiveRateManagerComponent]
+    exports: [CommonModule, FormsModule, ReactiveFormsModule, ...PRIME_MODULES, EffectiveRateManagerComponent,
+    ResponsiveTableDirective]
 })
 export class SharedModule {}

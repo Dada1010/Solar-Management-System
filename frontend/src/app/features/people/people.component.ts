@@ -1,7 +1,7 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { FormBuilder, Validators } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
+import { Menu } from 'primeng/menu';
 import { forkJoin, map, of, Subscription } from 'rxjs';
 import {
 	BranchRecord,
@@ -22,19 +22,22 @@ import { ManagementApiService } from '../../core/services/management-api.service
 	standalone: false
 })
 export class PeopleComponent implements OnDestroy {
-	private readonly formBuilder = inject(FormBuilder);
 	rows: EmployeeRecord[] = [];
+	peopleActionItems: MenuItem[] = [];
 	branches: BranchRecord[] = [];
 	employeeType: EmployeeType = 'COMPANY_EMPLOYEE';
 	title = 'Employees';
+	selfOnly = false;
 	loading = false;
 	saving = false;
-	dialogVisible = false;
+	peopleEditorVisible = false;
 	msedclDialogVisible = false;
 	msedclLoading = false;
 	msedclSaving = false;
 	editingId: number | null = null;
 	editingMsedclId: number | null = null;
+	editingMsedcl: MsedclDetailRecord | null = null;
+	editingPerson: EmployeeRecord | null = null;
 	selectedCustomer: EmployeeRecord | null = null;
 	msedclRows: MsedclDetailRecord[] = [];
 	page = 0;
@@ -42,23 +45,6 @@ export class PeopleComponent implements OnDestroy {
 	totalRecords = 0;
 	nameFilter = '';
 	private branchesLoaded = false;
-	readonly form = this.formBuilder.nonNullable.group({
-		firstName: ['', [Validators.required, Validators.maxLength(100)]],
-		lastName: ['', [Validators.required, Validators.maxLength(100)]],
-		emailAddress: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
-		mobileNo: [''],
-		address: [''],
-		branchId: this.formBuilder.control<number | null>(null, Validators.required)
-	});
-	readonly msedclForm = this.formBuilder.nonNullable.group({
-		billingUnit: ['', Validators.required],
-		name: ['', Validators.required],
-		mobileNo: ['', Validators.required],
-		consumerNo: ['', Validators.required],
-		ratePerUnit: [0, [Validators.required, Validators.min(0)]],
-		dueDays: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
-		chargeType: this.formBuilder.nonNullable.control<MsedclChargeType>('ONLY_SOLAR_GENERATION', Validators.required)
-	});
 	private readonly routeSubscription: Subscription;
 
 	constructor(
@@ -69,7 +55,8 @@ export class PeopleComponent implements OnDestroy {
 	) {
 		this.routeSubscription = this.route.data.subscribe((data) => {
 			this.employeeType = data['employeeType'] as EmployeeType;
-			this.title = this.employeeType === 'CUSTOMER' ? 'Customers' : 'Employees';
+			this.selfOnly = this.employeeType === 'CUSTOMER' && this.auth.user?.role === 'CUSTOMER';
+			this.title = this.selfOnly ? 'Customer Details' : this.employeeType === 'CUSTOMER' ? 'Customers' : 'Employees';
 			this.page = 0;
 			this.nameFilter = '';
 			this.loadPage();
@@ -94,6 +81,17 @@ export class PeopleComponent implements OnDestroy {
 
 	loadPage(): void {
 		this.loading = true;
+		if (this.selfOnly) {
+			this.api.currentEmployee().subscribe({
+				next: (customer) => {
+					this.rows = [customer];
+					this.totalRecords = 1;
+					this.loading = false;
+				},
+				error: (error: unknown) => this.handleError('Could not load customer details', error)
+			});
+			return;
+		}
 		const branchRequest = this.branchesLoaded
 			? of(this.branches)
 			: this.auth.user?.companyId
@@ -133,8 +131,8 @@ export class PeopleComponent implements OnDestroy {
 	create(): void {
 		if (!this.canWrite) return;
 		this.editingId = null;
-		this.form.reset({ firstName: '', lastName: '', emailAddress: '', mobileNo: '', address: '', branchId: this.branches[0]?.id ?? null });
-		this.dialogVisible = true;
+		this.editingPerson = null;
+		this.peopleEditorVisible = true;
 	}
 
 	edit(person: EmployeeRecord): void {
@@ -143,16 +141,9 @@ export class PeopleComponent implements OnDestroy {
 		this.api.employee(person.id).subscribe({
 			next: (record) => {
 				this.editingId = record.id;
-				this.form.patchValue({
-					firstName: record.firstName,
-					lastName: record.lastName,
-					emailAddress: record.emailAddress,
-					mobileNo: record.mobileNo ?? '',
-					address: record.address ?? '',
-					branchId: record.branchId
-				});
+				this.editingPerson = record;
 				this.loading = false;
-				this.dialogVisible = true;
+				this.peopleEditorVisible = true;
 			},
 			error: (error: unknown) => this.handleError('Could not load person', error)
 		});
@@ -161,7 +152,7 @@ export class PeopleComponent implements OnDestroy {
 	openMsedclDetails(customer: EmployeeRecord): void {
 		this.selectedCustomer = customer;
 		this.editingMsedclId = null;
-		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, dueDays: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
+		this.editingMsedcl = null;
 		this.msedclDialogVisible = true;
 		this.loadMsedclDetails();
 	}
@@ -169,29 +160,17 @@ export class PeopleComponent implements OnDestroy {
 	editMsedclDetail(detail: MsedclDetailRecord): void {
 		if (!this.canWrite) return;
 		this.editingMsedclId = detail.id;
-		this.msedclForm.patchValue({
-			billingUnit: detail.billingUnit,
-			name: detail.name,
-			mobileNo: detail.mobileNo,
-			consumerNo: detail.consumerNo,
-			ratePerUnit: detail.ratePerUnit,
-			dueDays: detail.dueDays,
-			chargeType: detail.chargeType
-		});
+		this.editingMsedcl = detail;
 	}
 
 	resetMsedclForm(): void {
 		this.editingMsedclId = null;
-		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, dueDays: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
+		this.editingMsedcl = null;
 	}
 
-	saveMsedclDetail(): void {
-		if (!this.canWrite || !this.selectedCustomer || this.msedclForm.invalid) {
-			this.msedclForm.markAllAsTouched();
-			return;
-		}
+	saveMsedclDetail(payload: MsedclDetailPayload): void {
+		if (!this.canWrite || !this.selectedCustomer) return;
 		this.msedclSaving = true;
-		const payload: MsedclDetailPayload = this.msedclForm.getRawValue();
 		const request = this.editingMsedclId === null
 			? this.api.addCustomerMsedclDetail(this.selectedCustomer.id, payload)
 			: this.api.updateCustomerMsedclDetail(this.selectedCustomer.id, this.editingMsedclId, payload);
@@ -243,6 +222,20 @@ export class PeopleComponent implements OnDestroy {
 		});
 	}
 
+	openPersonActions(person: EmployeeRecord, event: Event, menu: Menu): void {
+		this.peopleActionItems = [];
+		if (this.canWrite) {
+			this.peopleActionItems.push({ label: 'Update', icon: 'pi pi-pencil', command: () => this.edit(person) });
+		}
+		if (this.canDelete) {
+			this.peopleActionItems.push(
+				{ label: 'Reset Password', icon: 'pi pi-key', command: () => this.resetPassword(person) },
+				{ label: 'Delete', icon: 'pi pi-trash', command: () => this.removePerson(person) }
+			);
+		}
+		if (this.peopleActionItems.length) menu.toggle(event);
+	}
+
 	private loadMsedclDetails(): void {
 		if (!this.selectedCustomer) return;
 		this.msedclLoading = true;
@@ -258,21 +251,17 @@ export class PeopleComponent implements OnDestroy {
 		});
 	}
 
-	save(): void {
-		if (!this.canWrite || this.form.invalid) {
-			this.form.markAllAsTouched();
-			return;
-		}
+	savePerson(payload: EmployeePayload): void {
+		if (!this.canWrite) return;
 		this.saving = true;
-		const value = this.form.getRawValue();
-		const payload: EmployeePayload = { ...value, branchId: Number(value.branchId), employeeType: this.employeeType };
 		const request = this.editingId === null
 			? this.api.createEmployee(payload)
 			: this.api.updateEmployee(this.editingId, payload);
 		request.subscribe({
 			next: () => {
 				this.saving = false;
-				this.dialogVisible = false;
+				this.peopleEditorVisible = false;
+				this.editingPerson = null;
 				this.page = 0;
 				this.messages.add({ severity: 'success', summary: 'Saved', detail: `${this.title.slice(0, -1)} saved successfully.` });
 				this.loadPage();

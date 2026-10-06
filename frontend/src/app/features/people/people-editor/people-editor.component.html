@@ -1,0 +1,17 @@
+<p-dialog [visible]="visible" (visibleChange)="handleVisibilityChange($event)"
+	[header]="(person ? 'Update ' : 'Add ') + accountLabel" [modal]="true" [draggable]="false"
+	[style]="{ width: 'min(42rem, 94vw)' }">
+	<form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
+		<label>First name<input pInputText formControlName="firstName" autocomplete="given-name"></label>
+		<label>Last name<input pInputText formControlName="lastName" autocomplete="family-name"></label>
+		<label class="wide">Email address<input pInputText type="email" formControlName="emailAddress" autocomplete="email"></label>
+		<label>Mobile number<input pInputText type="tel" formControlName="mobileNo" autocomplete="tel"></label>
+		<label>Branch<select formControlName="branchId"><option [ngValue]="null" disabled>Select branch</option><option *ngFor="let branch of branches" [ngValue]="branch.id">{{ branch.name }} · {{ branch.companyName }}</option></select></label>
+		<label class="wide">Address<input pInputText formControlName="address" autocomplete="street-address"></label>
+		<p class="temporary-password wide" *ngIf="!person">New accounts start with temporary password <strong>123456</strong> and must change it after sign-in.</p>
+		<div class="form-actions wide">
+			<p-button label="Cancel" severity="secondary" [outlined]="true" type="button" (onClick)="handleVisibilityChange(false)" [disabled]="saving"></p-button>
+			<p-button [label]="'Save ' + accountLabel" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button>
+		</div>
+	</form>
+</p-dialog>

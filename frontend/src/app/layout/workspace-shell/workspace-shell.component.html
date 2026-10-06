@@ -16,6 +16,7 @@
         <a routerLink="/employees" routerLinkActive="current"><i class="pi pi-users"></i><span>Employee</span><i class="pi pi-angle-right nav-arrow"></i></a>
         <a routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer</span><i class="pi pi-angle-right nav-arrow"></i></a>
       </ng-container>
+      <a *ngIf="auth.user?.role === 'CUSTOMER'" routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer Details</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/consumer-details" routerLinkActive="current"><i class="pi pi-bolt"></i><span>Consumer Details</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/invoices" routerLinkActive="current"><i class="pi pi-file-edit"></i><span>Invoices</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/payment-details" routerLinkActive="current"><i class="pi pi-wallet"></i><span>Payment Details</span><i class="pi pi-angle-right nav-arrow"></i></a>

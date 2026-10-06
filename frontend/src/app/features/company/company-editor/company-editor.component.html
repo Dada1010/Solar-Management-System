@@ -1,0 +1,15 @@
+<p-dialog [visible]="visible" (visibleChange)="handleVisibilityChange($event)"
+	[header]="company ? 'Update company' : 'Add company'" [modal]="true" [draggable]="false"
+	[style]="{ width: 'min(40rem, 94vw)' }">
+	<form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
+		<label class="wide">Company name<input pInputText formControlName="name"></label>
+		<label>Industry<input pInputText formControlName="industry"></label>
+		<label>Email address<input pInputText type="email" formControlName="emailAddress"></label>
+		<label>Mobile number<input pInputText type="tel" formControlName="mobileNo"></label>
+		<label>Address<input pInputText formControlName="address"></label>
+		<div class="form-actions wide">
+			<p-button label="Cancel" severity="secondary" [outlined]="true" type="button" (onClick)="handleVisibilityChange(false)" [disabled]="saving"></p-button>
+			<p-button label="Save company" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button>
+		</div>
+	</form>
+</p-dialog>

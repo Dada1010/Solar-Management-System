@@ -9,14 +9,22 @@ import { ConsumerDetailsComponent } from '../features/consumer-details/consumer-
 import { InvoiceComponent } from '../features/invoice/invoice.component';
 import { PaymentDetailsComponent } from '../features/payment-details/payment-details.component';
 import { DashboardComponent } from '../features/dashboard/dashboard.component';
+import { CompanyEditorComponent } from '../features/company/company-editor/company-editor.component';
+import { BranchEditorComponent } from '../features/branch/branch-editor/branch-editor.component';
+import { PeopleEditorComponent } from '../features/people/people-editor/people-editor.component';
+import { MsedclDetailEditorComponent } from '../features/people/msedcl-detail-editor/msedcl-detail-editor.component';
 
 @NgModule({
   declarations: [
     WorkspaceShellComponent,
     DashboardComponent,
     CompanyComponent,
+    CompanyEditorComponent,
     BranchComponent,
+    BranchEditorComponent,
     PeopleComponent,
+    PeopleEditorComponent,
+    MsedclDetailEditorComponent,
     ConsumerDetailsComponent,
     InvoiceComponent,
     PaymentDetailsComponent

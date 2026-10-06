@@ -1,0 +1,7 @@
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; padding-top: 8px; }
+.form-grid label { display: grid; gap: 7px; color: #3b544a; font-size: 11px; font-weight: 700; }
+.form-grid input, .form-grid select { width: 100%; }
+.form-grid select { min-height: 40px; padding: 0 10px; border: 1px solid #d6dfd6; border-radius: 6px; color: #29463a; background: #fff; font: inherit; font-weight: 500; }
+.form-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 6px; }
+.msedcl-form { padding-bottom: 18px; border-bottom: 1px solid #e9eee8; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }

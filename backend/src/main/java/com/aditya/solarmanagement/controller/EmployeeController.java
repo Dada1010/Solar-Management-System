@@ -3,6 +3,7 @@ package com.aditya.solarmanagement.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,6 +41,12 @@ public class EmployeeController {
 			@RequestParam(required = false) String name) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Employees retrieved successfully",
 				managementService.employees(page, size, name)));
+	}
+
+	@GetMapping("/me")
+	public ResponseEntity<ApiResponse<EmployeeResponse>> currentEmployee(Authentication authentication) {
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Customer account retrieved successfully",
+				managementService.currentEmployee(authentication.getName())));
 	}
 
 	@GetMapping("/by-type/{employeeType}")

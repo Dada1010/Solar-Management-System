@@ -100,6 +100,7 @@ export interface EmployeePayload {
 
 export interface MsedclDetailRecord {
   id: number;
+  customerId: number;
   companyId: number;
   branchId: number;
   branchName: string;

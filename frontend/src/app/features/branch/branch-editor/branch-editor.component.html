@@ -1,0 +1,16 @@
+<p-dialog [visible]="visible" (visibleChange)="handleVisibilityChange($event)"
+	[header]="branch ? 'Update branch' : 'Add branch'" [modal]="true" [draggable]="false"
+	[style]="{ width: 'min(40rem, 94vw)' }">
+	<form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
+		<label class="wide">Branch name<input pInputText formControlName="name"></label>
+		<label class="wide" *ngIf="auth.user?.companyId; else companySelector">Company<input pInputText [value]="selectedCompanyName" readonly><input type="hidden" formControlName="companyId"></label>
+		<ng-template #companySelector><label class="wide">Company<select formControlName="companyId"><option [ngValue]="null" disabled>Select company</option><option *ngFor="let company of companies" [ngValue]="company.id">{{ company.name }}</option></select></label></ng-template>
+		<label>Email address<input pInputText type="email" formControlName="emailAddress"></label>
+		<label>Mobile number<input pInputText type="tel" formControlName="mobileNo"></label>
+		<label class="wide">Address<input pInputText formControlName="address"></label>
+		<div class="form-actions wide">
+			<p-button label="Cancel" severity="secondary" [outlined]="true" type="button" (onClick)="handleVisibilityChange(false)" [disabled]="saving"></p-button>
+			<p-button label="Save branch" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button>
+		</div>
+	</form>
+</p-dialog>

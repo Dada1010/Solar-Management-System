@@ -45,23 +45,26 @@ public class CustomerMsedclController {
 	@PostMapping
 	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<MsedclDetailResponse>> add(@PathVariable Long customerId,
-			@Valid @RequestBody MsedclDetailRequest request) {
+			Authentication authentication, @Valid @RequestBody MsedclDetailRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED,
-				"MSEDCL detail added successfully", managementService.addMsedclDetail(customerId, request)));
+				"MSEDCL detail added successfully",
+				managementService.addMsedclDetail(authentication.getName(), customerId, request)));
 	}
 
 	@PutMapping("/{detailId}")
 	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<ApiResponse<MsedclDetailResponse>> update(@PathVariable Long customerId,
-			@PathVariable Long detailId, @Valid @RequestBody MsedclDetailRequest request) {
+			@PathVariable Long detailId, Authentication authentication,
+			@Valid @RequestBody MsedclDetailRequest request) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "MSEDCL detail updated successfully",
-				managementService.updateMsedclDetail(customerId, detailId, request)));
+				managementService.updateMsedclDetail(authentication.getName(), customerId, detailId, request)));
 	}
 
 	@DeleteMapping("/{detailId}")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long customerId, @PathVariable Long detailId) {
-		managementService.deleteMsedclDetail(customerId, detailId);
+	public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long customerId, @PathVariable Long detailId,
+			Authentication authentication) {
+		managementService.deleteMsedclDetail(authentication.getName(), customerId, detailId);
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "MSEDCL detail deleted successfully", null));
 	}
 }

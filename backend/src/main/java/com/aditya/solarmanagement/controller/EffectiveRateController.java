@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,11 +33,11 @@ public class EffectiveRateController {
 	}
 
 	@GetMapping("/{ownerType}/{ownerId}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse<List<EffectiveRateResponse>>> rates(@PathVariable EffectiveRateOwnerType ownerType,
-			@PathVariable Long ownerId) {
+			@PathVariable Long ownerId, Authentication authentication) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Effective rates retrieved successfully",
-				managementService.effectiveRates(ownerType, ownerId)));
+				managementService.effectiveRates(ownerType, ownerId, authentication.getName())));
 	}
 
 	@PostMapping("/{ownerType}/{ownerId}")

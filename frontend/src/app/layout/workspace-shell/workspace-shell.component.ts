@@ -55,6 +55,8 @@ export class WorkspaceShellComponent implements OnDestroy {
       invoices: 'Invoices',
       'payment-details': 'Payment Details'
     };
-    this.activeTitle = titles[path] ?? 'Dashboard';
+    this.activeTitle = path === 'customers' && this.auth.user?.role === 'CUSTOMER'
+      ? 'Customer Details'
+      : titles[path] ?? 'Dashboard';
   }
 }

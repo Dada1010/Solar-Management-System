@@ -89,6 +89,10 @@ export class ManagementApiService {
     return this.getPage(`/employees/by-type/${employeeType}`, page, size, name);
   }
 
+  currentEmployee(): Observable<EmployeeRecord> {
+    return this.get('/employees/me');
+  }
+
   employee(id: number): Observable<EmployeeRecord> {
     return this.get(`/employees/${id}`);
   }
@@ -119,6 +123,10 @@ export class ManagementApiService {
     if (mobileNo?.trim()) params = params.set('mobileNo', mobileNo.trim());
     if (consumerNo?.trim()) params = params.set('consumerNo', consumerNo.trim());
     return this.http.get<ApiResponse<MsedclDetailRecord[]>>(`${this.baseUrl}/consumer-details`, { params }).pipe(map(unwrap));
+  }
+
+  updateConsumerMsedclDetail(detailId: number, payload: MsedclDetailPayload): Observable<MsedclDetailRecord> {
+    return this.put(`/consumer-details/${detailId}`, payload);
   }
 
   invoices(filters?: InvoiceFilters): Observable<MsedclInvoiceRecord[]> {

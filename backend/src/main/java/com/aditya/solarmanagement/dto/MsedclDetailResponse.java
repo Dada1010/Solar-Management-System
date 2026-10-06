@@ -6,6 +6,7 @@ import com.aditya.solarmanagement.models.MsedclChargeType;
 
 public record MsedclDetailResponse(
 		Long id,
+		Long customerId,
 		Long companyId,
 		Long branchId,
 		String branchName,

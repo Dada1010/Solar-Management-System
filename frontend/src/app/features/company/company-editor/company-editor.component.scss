@@ -1,0 +1,6 @@
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; padding-top: 8px; }
+.form-grid label { display: grid; gap: 7px; color: #3b544a; font-size: 11px; font-weight: 700; }
+.form-grid input { width: 100%; }
+.wide { grid-column: 1 / -1; }
+.form-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 6px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }

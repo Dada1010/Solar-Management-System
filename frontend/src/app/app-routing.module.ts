@@ -26,7 +26,7 @@ const routes: Routes = [
       { path: 'companies', component: CompanyComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'USER'] } },
       { path: 'branches', component: BranchComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'USER'] } },
       { path: 'employees', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'COMPANY_EMPLOYEE', roles: ['ADMIN', 'USER'] } },
-      { path: 'customers', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'CUSTOMER', roles: ['ADMIN', 'USER'] } },
+      { path: 'customers', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'CUSTOMER', roles: ['ADMIN', 'USER', 'CUSTOMER'] } },
       { path: 'consumer-details', component: ConsumerDetailsComponent },
       { path: 'invoices', component: InvoiceComponent },
       { path: 'payment-details', component: PaymentDetailsComponent },

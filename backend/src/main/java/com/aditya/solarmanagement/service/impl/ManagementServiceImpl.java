@@ -226,6 +226,11 @@ public class ManagementServiceImpl implements ManagementService {
 	}
 
 	@Override
+	public EmployeeResponse currentEmployee(String requestingEmail) {
+		return employeeResponse(employeeByEmail(requestingEmail));
+	}
+
+	@Override
 	public EmployeeResponse employee(Long id) {
 		logger.debug("Retrieving employee id={}", id);
 		return employeeResponse(employees.findById(id)
@@ -342,8 +347,11 @@ public class ManagementServiceImpl implements ManagementService {
 
 	@Override
 	@Transactional
-	public MsedclDetailResponse addMsedclDetail(Long customerId, MsedclDetailRequest request) {
+	public MsedclDetailResponse addMsedclDetail(String requestingEmail, Long customerId,
+			MsedclDetailRequest request) {
+		Employee requester = employeeByEmail(requestingEmail);
 		Employee customer = customer(customerId);
+		assertMsedclWriteAccess(requester, customer);
 		String consumerNo = request.consumerNo().trim();
 		if (msedclDetails.existsByConsumerNoIgnoreCase(consumerNo)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
@@ -358,25 +366,49 @@ public class ManagementServiceImpl implements ManagementService {
 
 	@Override
 	@Transactional
-	public MsedclDetailResponse updateMsedclDetail(Long customerId, Long detailId, MsedclDetailRequest request) {
+	public MsedclDetailResponse updateMsedclDetail(String requestingEmail, Long customerId, Long detailId,
+			MsedclDetailRequest request) {
+		Employee requester = employeeByEmail(requestingEmail);
 		Employee customer = customer(customerId);
+		assertMsedclWriteAccess(requester, customer);
 		MsedclDetail detail = customer.getMsedclDetails().stream()
 				.filter(item -> item.getId().equals(detailId))
 				.findFirst()
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MSEDCL detail not found"));
+		return updateMsedclDetail(customerId, customer, detail, request);
+	}
+
+	@Override
+	@Transactional
+	public MsedclDetailResponse updateConsumerDetail(String requestingEmail, Long detailId,
+			MsedclDetailRequest request) {
+		Employee requester = employeeByEmail(requestingEmail);
+		MsedclDetail detail = msedclDetails.findById(detailId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MSEDCL detail not found"));
+		Employee customer = detail.getCustomer();
+		assertMsedclWriteAccess(requester, customer);
+		return updateMsedclDetail(customer.getId(), customer, detail, request);
+	}
+
+	private MsedclDetailResponse updateMsedclDetail(Long customerId, Employee customer, MsedclDetail detail,
+			MsedclDetailRequest request) {
 		String consumerNo = request.consumerNo().trim();
-		if (msedclDetails.existsByConsumerNoIgnoreCaseAndIdNot(consumerNo, detailId)) {
+		if (msedclDetails.existsByConsumerNoIgnoreCaseAndIdNot(consumerNo, detail.getId())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
 		}
 		detail.updateDetails(request.billingUnit().trim(), request.name().trim(), request.mobileNo().trim(),
 				consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays());
-		logger.info("Updated MSEDCL detail id={} for customer id={}", detailId, customerId);
+		logger.info("Updated MSEDCL detail id={} for customer id={}", detail.getId(), customerId);
 		return msedclDetailResponse(detail);
 	}
 
 	@Override
 	@Transactional
-	public void deleteMsedclDetail(Long customerId, Long detailId) {
+	public void deleteMsedclDetail(String requestingEmail, Long customerId, Long detailId) {
+		Employee requester = employeeByEmail(requestingEmail);
+		if (requester.getRole() != EmployeeRole.ADMIN) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can delete MSEDCL details");
+		}
 		Employee customer = customer(customerId);
 		MsedclDetail detail = customer.getMsedclDetails().stream()
 				.filter(item -> item.getId().equals(detailId))
@@ -398,6 +430,16 @@ public class ManagementServiceImpl implements ManagementService {
 		return employee;
 	}
 
+	private void assertMsedclWriteAccess(Employee requester, Employee customer) {
+		boolean allowed = requester.getRole() == EmployeeRole.ADMIN
+				|| (requester.getRole() == EmployeeRole.USER
+						&& requester.getBranch().getId().equals(customer.getBranch().getId()));
+		if (!allowed) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+					"You cannot change MSEDCL details outside your branch");
+		}
+	}
+
 	private Employee employeeByEmail(String emailAddress) {
 		return employees.findByEmailAddressIgnoreCase(emailAddress)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account not found"));
@@ -405,15 +447,36 @@ public class ManagementServiceImpl implements ManagementService {
 
 	private MsedclDetailResponse msedclDetailResponse(MsedclDetail detail) {
 		Branch branch = detail.getCustomer().getBranch();
-		return new MsedclDetailResponse(detail.getId(), branch.getCompany().getId(), branch.getId(), branch.getName(),
+		return new MsedclDetailResponse(detail.getId(), detail.getCustomer().getId(), branch.getCompany().getId(),
+				branch.getId(), branch.getName(),
 				detail.getBillingUnit(), detail.getName(), detail.getMobileNo(), detail.getConsumerNo(),
 				detail.getRatePerUnit(), detail.getLastInvoiceNo(), detail.getDueDays(), detail.getChargeType());
 	}
 
 	@Override
-	public List<EffectiveRateResponse> effectiveRates(EffectiveRateOwnerType ownerType, Long ownerId) {
+	public List<EffectiveRateResponse> effectiveRates(EffectiveRateOwnerType ownerType, Long ownerId,
+			String requestingEmail) {
 		logger.debug("Listing effective rates ownerType={} ownerId={}", ownerType, ownerId);
+		Employee requester = employeeByEmail(requestingEmail);
+		assertRateReadAccess(requester, rateOwner(ownerType, ownerId));
 		return ratesFor(ownerType, ownerId).stream().map(this::effectiveRateResponse).toList();
+	}
+
+	private void assertRateReadAccess(Employee requester, RateOwner owner) {
+		boolean allowed = switch (requester.getRole()) {
+			case ADMIN -> true;
+			case USER -> switch (owner.ownerType()) {
+				case COMPANY -> requester.getBranch().getCompany().getId().equals(owner.company().getId());
+				case BRANCH -> requester.getBranch().getId().equals(owner.branch().getId());
+				case MSEDCL_DETAIL -> requester.getBranch().getId()
+						.equals(owner.msedclDetail().getCustomer().getBranch().getId());
+			};
+			case CUSTOMER -> owner.ownerType() == EffectiveRateOwnerType.MSEDCL_DETAIL
+					&& requester.getId().equals(owner.msedclDetail().getCustomer().getId());
+		};
+		if (!allowed) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view rates for this account");
+		}
 	}
 
 	@Override
@@ -469,11 +532,11 @@ public class ManagementServiceImpl implements ManagementService {
 
 	private RateOwner rateOwner(EffectiveRateOwnerType ownerType, Long ownerId) {
 		return switch (ownerType) {
-			case COMPANY -> new RateOwner(companies.findById(ownerId)
+			case COMPANY -> new RateOwner(ownerType, companies.findById(ownerId)
 					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found")), null, null);
-			case BRANCH -> new RateOwner(null, branches.findById(ownerId)
+			case BRANCH -> new RateOwner(ownerType, null, branches.findById(ownerId)
 					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Branch not found")), null);
-			case MSEDCL_DETAIL -> new RateOwner(null, null, msedclDetails.findById(ownerId)
+			case MSEDCL_DETAIL -> new RateOwner(ownerType, null, null, msedclDetails.findById(ownerId)
 					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MSEDCL detail not found")));
 		};
 	}
@@ -497,7 +560,7 @@ public class ManagementServiceImpl implements ManagementService {
 		return new EffectiveRateResponse(rate.getId(), rate.getStartDate(), rate.getRatePerUnit());
 	}
 
-	private record RateOwner(Company company, Branch branch, MsedclDetail msedclDetail) {}
+	private record RateOwner(EffectiveRateOwnerType ownerType, Company company, Branch branch, MsedclDetail msedclDetail) {}
 
 	private CompanyResponse companyResponse(Company company) {
 		return new CompanyResponse(company.getId(), company.getName(), company.getIndustry(), company.getAddress(),

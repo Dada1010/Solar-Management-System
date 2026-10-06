@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { MessageService } from 'primeng/api';
-import { MsedclDetailRecord } from '../../core/models/api.models';
+import { MsedclDetailPayload, MsedclDetailRecord } from '../../core/models/api.models';
+import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
 
 @Component({
@@ -12,12 +13,54 @@ import { ManagementApiService } from '../../core/services/management-api.service
 export class ConsumerDetailsComponent {
 	rows: MsedclDetailRecord[] = [];
 	loading = false;
+	saving = false;
+	editorVisible = false;
+	editingDetail: MsedclDetailRecord | null = null;
 	nameFilter = '';
 	mobileNoFilter = '';
 	consumerNoFilter = '';
 
-	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService) {
+	constructor(private readonly api: ManagementApiService, private readonly messages: MessageService,
+		readonly auth: AuthService) {
 		this.load();
+	}
+
+	get canViewEffectiveRates(): boolean {
+		return this.auth.user?.role === 'ADMIN' || this.auth.user?.role === 'USER'
+			|| this.auth.user?.role === 'CUSTOMER';
+	}
+
+	get canUpdateDetails(): boolean {
+		return this.auth.user?.role === 'ADMIN' || this.auth.user?.role === 'USER';
+	}
+
+	edit(detail: MsedclDetailRecord): void {
+		if (!this.canUpdateDetails) return;
+		this.editingDetail = detail;
+		this.editorVisible = true;
+	}
+
+	saveDetail(payload: MsedclDetailPayload): void {
+		if (!this.canUpdateDetails || !this.editingDetail) return;
+		this.saving = true;
+		this.api.updateConsumerMsedclDetail(this.editingDetail.id, payload).subscribe({
+			next: (updated) => {
+				this.rows = this.rows.map((item) => item.id === updated.id ? updated : item);
+				this.saving = false;
+				this.editorVisible = false;
+				this.editingDetail = null;
+				this.messages.add({ severity: 'success', summary: 'Saved', detail: 'Consumer details updated.' });
+			},
+			error: (error: unknown) => {
+				this.saving = false;
+				this.showError('Could not update consumer details', error);
+			}
+		});
+	}
+
+	cancelEdit(): void {
+		this.editorVisible = false;
+		this.editingDetail = null;
 	}
 
 	applyFilters(): void {
@@ -47,5 +90,12 @@ export class ConsumerDetailsComponent {
 					detail: responseMessage ?? 'Please try again.' });
 			}
 		});
+	}
+
+	private showError(summary: string, error: unknown): void {
+		const responseMessage = typeof error === 'object' && error !== null && 'error' in error
+			? (error as { error?: { message?: string } }).error?.message
+			: undefined;
+		this.messages.add({ severity: 'error', summary, detail: responseMessage ?? 'Please try again.' });
 	}
 }

@@ -31,6 +31,7 @@ public interface ManagementService {
 	void deleteBranch(Long id);
 	PageResponse<EmployeeResponse> employees(int page, int size, String name);
 	PageResponse<EmployeeResponse> employeesByType(Employee.EmployeeType employeeType, int page, int size, String name);
+	EmployeeResponse currentEmployee(String requestingEmail);
 	EmployeeResponse employee(Long id);
 	EmployeeResponse addEmployee(EmployeeRequest request);
 	EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
@@ -39,10 +40,12 @@ public interface ManagementService {
 	List<MsedclDetailResponse> consumerDetails(String requestingEmail, String name, String mobileNo, String consumerNo);
 	List<MsedclDetailResponse> msedclDetails(Long customerId, String requestingEmail, String name, String mobileNo,
 			String consumerNo);
-	MsedclDetailResponse addMsedclDetail(Long customerId, MsedclDetailRequest request);
-	MsedclDetailResponse updateMsedclDetail(Long customerId, Long detailId, MsedclDetailRequest request);
-	void deleteMsedclDetail(Long customerId, Long detailId);
-	List<EffectiveRateResponse> effectiveRates(EffectiveRateOwnerType ownerType, Long ownerId);
+	MsedclDetailResponse addMsedclDetail(String requestingEmail, Long customerId, MsedclDetailRequest request);
+	MsedclDetailResponse updateMsedclDetail(String requestingEmail, Long customerId, Long detailId,
+			MsedclDetailRequest request);
+	MsedclDetailResponse updateConsumerDetail(String requestingEmail, Long detailId, MsedclDetailRequest request);
+	void deleteMsedclDetail(String requestingEmail, Long customerId, Long detailId);
+	List<EffectiveRateResponse> effectiveRates(EffectiveRateOwnerType ownerType, Long ownerId, String requestingEmail);
 	EffectiveRateResponse addEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, EffectiveRateRequest request);
 	EffectiveRateResponse updateEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, Long rateId,
 			EffectiveRateRequest request);
