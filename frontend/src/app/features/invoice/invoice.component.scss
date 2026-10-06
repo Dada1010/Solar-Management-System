@@ -57,6 +57,9 @@
 .cancel-confirmation p { margin: 0; }
 .cancel-confirmation strong { color: #254b3d; overflow-wrap: anywhere; }
 .invoice-print { display: none; }
+.invoice-document { padding: 8px; color: #254b3d; background: #fff; }
+.invoice-document h2 { margin: 18px 0 8px; color: #254b3d; font-size: 14px; }
+.invoice-document footer { margin-top: 22px; padding-top: 9px; border-top: 1px solid #c9d4cc; color: #62756d; font-size: 9px; text-align: center; }
 .print-header { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 18px; border-bottom: 2px solid #244c3d; }
 .print-header > div { display: grid; align-content: start; gap: 5px; }
 .print-header strong { color: #173d36; font: 700 24px Georgia, serif; }

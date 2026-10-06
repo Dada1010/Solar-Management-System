@@ -44,6 +44,8 @@ export class InvoiceComponent implements OnDestroy {
 	paymentPendingReversal: InvoicePaymentRecord | null = null;
 	formVisible = false;
 	printRecord: MsedclInvoiceRecord | null = null;
+	invoiceViewVisible = false;
+	viewingInvoice: MsedclInvoiceRecord | null = null;
 	uploadingInvoiceId: number | null = null;
 	private uploadTargetInvoice: MsedclInvoiceRecord | null = null;
 	@ViewChild('msebBillPicker') private msebBillPicker?: ElementRef<HTMLInputElement>;
@@ -206,8 +208,23 @@ export class InvoiceComponent implements OnDestroy {
 	}
 
 	printInvoice(invoice: MsedclInvoiceRecord): void {
+		this.closeInvoiceView();
 		this.printRecord = invoice;
 		setTimeout(() => window.print(), 0);
+	}
+
+	viewInvoice(invoice: MsedclInvoiceRecord): void {
+		this.viewingInvoice = invoice;
+		this.invoiceViewVisible = true;
+	}
+
+	printViewedInvoice(): void {
+		if (this.viewingInvoice) this.printInvoice(this.viewingInvoice);
+	}
+
+	closeInvoiceView(): void {
+		this.invoiceViewVisible = false;
+		this.viewingInvoice = null;
 	}
 
 	uploadMsebBill(invoice: MsedclInvoiceRecord, event: Event): void {
@@ -274,6 +291,7 @@ export class InvoiceComponent implements OnDestroy {
 
 	openInvoiceActions(invoice: MsedclInvoiceRecord, event: Event, menu: Menu): void {
 		this.invoiceActionItems = [
+			{ label: 'View invoice', icon: 'pi pi-eye', command: () => this.viewInvoice(invoice) },
 			{ label: 'Print invoice', icon: 'pi pi-print', command: () => this.printInvoice(invoice) }
 		];
 		if (invoice.msebBillFileName) {
