@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="016-add-msedcl-due-days" author="aditya">
+		<addColumn tableName="customer_msedcl_details">
+			<column name="due_days" type="INT"/>
+		</addColumn>
+		<update tableName="customer_msedcl_details">
+			<column name="due_days" valueNumeric="0"/>
+		</update>
+		<addNotNullConstraint tableName="customer_msedcl_details" columnName="due_days" columnDataType="INT"/>
+	</changeSet>
+</databaseChangeLog>

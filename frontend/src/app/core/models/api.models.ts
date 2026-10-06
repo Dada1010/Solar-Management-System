@@ -1,3 +1,4 @@
+export type InvoicePaymentType = 'CASH' | 'UPI';
 export interface ApiResponse<T> {
   status: boolean;
   code: number;
@@ -108,6 +109,7 @@ export interface MsedclDetailRecord {
   consumerNo: string;
   ratePerUnit: number;
   lastInvoiceNo: string | null;
+  dueDays: number;
   chargeType: MsedclChargeType;
 }
 
@@ -120,6 +122,7 @@ export interface MsedclDetailPayload {
   consumerNo: string;
   ratePerUnit: number;
   chargeType: MsedclChargeType;
+  dueDays: number;
 }
 
 export interface MsedclInvoicePayload {
@@ -149,6 +152,8 @@ export interface MsedclInvoiceRecord {
   chargeType: MsedclChargeType;
   invoiceDate: string;
   billingDate: string;
+  dueDays: number;
+  dueDate: string;
   importCurrent: number;
   importPrevious: number;
   importConsumption: number;
@@ -176,14 +181,21 @@ export interface MsedclInvoiceRecord {
 export interface InvoicePaymentRecord {
   id: number;
   invoiceId: number;
+  invoiceNo: string;
+  consumerName: string;
+  consumerNo: string;
   paymentDate: string;
   amount: number;
+  paymentType: InvoicePaymentType;
+  transactionNo: string | null;
   note: string | null;
 }
 
 export interface InvoicePaymentPayload {
   paymentDate: string;
   amount: number;
+  paymentType: InvoicePaymentType;
+  transactionNo: string | null;
   note: string;
 }
 

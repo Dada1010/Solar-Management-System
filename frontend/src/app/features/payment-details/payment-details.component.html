@@ -1,0 +1,12 @@
+<section class="feature-page">
+	<header class="feature-heading"><div><p class="eyebrow">ADITYA SOLAR / BILLING</p><h1>Payment Details</h1><p>Recorded invoice payments available to your role.</p></div></header>
+	<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading payments…</span></div>
+	<section class="directory-panel" *ngIf="!loading">
+		<div class="directory-heading"><strong>PAYMENT HISTORY</strong><span>{{ rows.length }} payments</span></div>
+		<p-table [value]="rows" [rowHover]="true" responsiveLayout="scroll" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '54rem' }">
+			<ng-template pTemplate="header"><tr><th>Payment date</th><th>Invoice number</th><th>Consumer</th><th>Consumer number</th><th>Payment type</th><th>Transaction number</th><th>Amount</th><th>Reference / note</th></tr></ng-template>
+			<ng-template pTemplate="body" let-payment><tr><td>{{ payment.paymentDate }}</td><td>{{ payment.invoiceNo }}</td><td>{{ payment.consumerName }}</td><td>{{ payment.consumerNo }}</td><td>{{ payment.paymentType }}</td><td>{{ payment.transactionNo || '—' }}</td><td>{{ payment.amount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ payment.note || '—' }}</td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="8" class="empty-cell">No payments recorded yet.</td></tr></ng-template>
+		</p-table>
+	</section>
+</section>

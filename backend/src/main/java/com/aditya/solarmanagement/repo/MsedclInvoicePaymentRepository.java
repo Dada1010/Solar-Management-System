@@ -12,6 +12,9 @@ import com.aditya.solarmanagement.models.MsedclInvoicePayment;
 
 public interface MsedclInvoicePaymentRepository extends JpaRepository<MsedclInvoicePayment, Long> {
 	List<MsedclInvoicePayment> findAllByInvoice_IdOrderByPaymentDateDescIdDesc(Long invoiceId);
+	List<MsedclInvoicePayment> findAllByOrderByPaymentDateDescIdDesc();
+	List<MsedclInvoicePayment> findAllByInvoice_Branch_IdOrderByPaymentDateDescIdDesc(Long branchId);
+	List<MsedclInvoicePayment> findAllByInvoice_MsedclDetail_Customer_IdOrderByPaymentDateDescIdDesc(Long customerId);
 
 	@Query("select p.invoice.id, sum(p.amount) from MsedclInvoicePayment p where p.invoice.id in :invoiceIds group by p.invoice.id")
 	List<Object[]> totalsByInvoiceIds(@Param("invoiceIds") Collection<Long> invoiceIds);

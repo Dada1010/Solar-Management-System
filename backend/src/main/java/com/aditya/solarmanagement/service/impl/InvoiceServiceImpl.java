@@ -138,6 +138,17 @@ public class InvoiceServiceImpl implements InvoiceService {
 	}
 
 	@Override
+	public List<InvoicePaymentResponse> allPayments(String requestingEmail) {
+		Employee requester = employeeByEmail(requestingEmail);
+		List<MsedclInvoicePayment> results = switch (requester.getRole()) {
+			case ADMIN -> payments.findAllByOrderByPaymentDateDescIdDesc();
+			case USER -> payments.findAllByInvoice_Branch_IdOrderByPaymentDateDescIdDesc(requester.getBranch().getId());
+			case CUSTOMER -> payments.findAllByInvoice_MsedclDetail_Customer_IdOrderByPaymentDateDescIdDesc(requester.getId());
+		};
+		return results.stream().map(this::paymentResponse).toList();
+	}
+
+	@Override
 	@Transactional
 	public List<InvoicePaymentResponse> addPayment(String requestingEmail, Long invoiceId,
 			InvoicePaymentRequest request) {
@@ -153,7 +164,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 		if (request.amount().compareTo(balance) > 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment exceeds the invoice balance");
 		}
+		if (request.paymentType() == com.aditya.solarmanagement.models.InvoicePaymentType.UPI
+				&& (request.transactionNo() == null || request.transactionNo().isBlank())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transaction number is required for UPI payments");
+		}
 		payments.saveAndFlush(new MsedclInvoicePayment(invoice, request.paymentDate(), request.amount(),
+				request.paymentType(), request.transactionNo() == null ? null : request.transactionNo().trim(),
 				request.note() == null ? null : request.note().trim()));
 		return payments.findAllByInvoice_IdOrderByPaymentDateDescIdDesc(invoiceId).stream()
 				.map(this::paymentResponse).toList();
@@ -211,7 +227,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 			msebBillAmount = request.msebBillAmount().setScale(2, RoundingMode.HALF_UP);
 		}
 		BigDecimal invoiceAmount = solarAmount.add(msebBillAmount).setScale(2, RoundingMode.HALF_UP);
-		return new MsedclInvoice(detail, request.invoiceDate(), request.billingDate(), request.importCurrent(),
+		return new MsedclInvoice(detail, request.invoiceDate(), request.billingDate(),
+				request.invoiceDate().plusDays(detail.getDueDays()), request.importCurrent(),
 				request.importPrevious(), importConsumption, request.exportCurrent(), request.exportPrevious(),
 				exportConsumption, request.generationCurrent(), request.generationPrevious(), generationConsumption,
 				request.previousBankUnits(), solarOffsetUnits, bankSolarUnits, solarBillUnits, rate.ratePerUnit(), rate.source(),
@@ -253,7 +270,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 		return new MsedclInvoiceResponse(invoice.getId(), invoice.getId(), invoice.getInvoiceNo(), invoice.getCompany().getId(),
 				invoice.getBranch().getId(), invoice.getMsedclDetail().getId(), invoice.getConsumerNo(),
 				invoice.getConsumerName(), invoice.getBillingUnit(), invoice.getChargeType(), invoice.getInvoiceDate(),
-				invoice.getBillingDate(), invoice.getImportCurrent(), invoice.getImportPrevious(), invoice.getImportConsumption(),
+				invoice.getBillingDate(), invoice.getDueDays(), invoice.getDueDate(), invoice.getImportCurrent(), invoice.getImportPrevious(), invoice.getImportConsumption(),
 				invoice.getExportCurrent(), invoice.getExportPrevious(), invoice.getExportConsumption(),
 				invoice.getGenerationCurrent(), invoice.getGenerationPrevious(), invoice.getGenerationConsumption(),
 				invoice.getPreviousBankUnits(), invoice.getSolarOffsetUnits(), invoice.getBankSolarUnits(),
@@ -273,8 +290,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 	}
 
 	private InvoicePaymentResponse paymentResponse(MsedclInvoicePayment payment) {
-		return new InvoicePaymentResponse(payment.getId(), payment.getInvoice().getId(), payment.getPaymentDate(),
-				payment.getAmount(), payment.getNote());
+		MsedclInvoice invoice = payment.getInvoice();
+		return new InvoicePaymentResponse(payment.getId(), invoice.getId(), invoice.getInvoiceNo(),
+				invoice.getConsumerName(), invoice.getConsumerNo(), payment.getPaymentDate(), payment.getAmount(),
+				payment.getPaymentType(), payment.getTransactionNo(), payment.getNote());
 	}
 
 	private Employee employeeByEmail(String emailAddress) {

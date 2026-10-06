@@ -102,6 +102,10 @@ export class ManagementApiService {
     return this.get('/invoices');
   }
 
+  paymentDetails(): Observable<InvoicePaymentRecord[]> {
+    return this.get('/payment-details');
+  }
+
   previewInvoice(payload: MsedclInvoicePayload): Observable<MsedclInvoiceRecord> {
     return this.post('/invoices/preview', payload);
   }

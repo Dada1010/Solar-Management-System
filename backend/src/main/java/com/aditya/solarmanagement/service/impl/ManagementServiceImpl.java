@@ -295,7 +295,7 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
 		}
 		MsedclDetail detail = new MsedclDetail(request.billingUnit().trim(), request.name().trim(),
-				request.mobileNo().trim(), consumerNo, request.ratePerUnit(), request.chargeType());
+				request.mobileNo().trim(), consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays());
 		customer.addMsedclDetail(detail);
 		employees.save(customer);
 		logger.info("Added MSEDCL detail id={} for customer id={}", detail.getId(), customerId);
@@ -315,7 +315,7 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
 		}
 		detail.updateDetails(request.billingUnit().trim(), request.name().trim(), request.mobileNo().trim(),
-				consumerNo, request.ratePerUnit(), request.chargeType());
+				consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays());
 		logger.info("Updated MSEDCL detail id={} for customer id={}", detailId, customerId);
 		return msedclDetailResponse(detail);
 	}
@@ -353,7 +353,7 @@ public class ManagementServiceImpl implements ManagementService {
 		Branch branch = detail.getCustomer().getBranch();
 		return new MsedclDetailResponse(detail.getId(), branch.getCompany().getId(), branch.getId(), branch.getName(),
 				detail.getBillingUnit(), detail.getName(), detail.getMobileNo(), detail.getConsumerNo(),
-				detail.getRatePerUnit(), detail.getLastInvoiceNo(), detail.getChargeType());
+				detail.getRatePerUnit(), detail.getLastInvoiceNo(), detail.getDueDays(), detail.getChargeType());
 	}
 
 	@Override

@@ -15,5 +15,6 @@ public record MsedclDetailResponse(
 		String consumerNo,
 		BigDecimal ratePerUnit,
 		String lastInvoiceNo,
+		int dueDays,
 		MsedclChargeType chargeType) {
 }

@@ -18,4 +18,7 @@
 	<include file="db/changelog/changes/013-add-mseb-bill-attachments.xml"/>
 	<include file="db/changelog/changes/014-add-invoice-owner-ids.xml"/>
 	<include file="db/changelog/changes/015-create-invoice-payments.xml"/>
+	<include file="db/changelog/changes/016-add-msedcl-due-days.xml"/>
+	<include file="db/changelog/changes/017-add-invoice-due-date.xml"/>
+	<include file="db/changelog/changes/018-add-payment-type.xml"/>
 </databaseChangeLog>

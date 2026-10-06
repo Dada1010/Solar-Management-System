@@ -56,6 +56,7 @@ export class PeopleComponent implements OnDestroy {
 		mobileNo: ['', Validators.required],
 		consumerNo: ['', Validators.required],
 		ratePerUnit: [0, [Validators.required, Validators.min(0)]],
+		dueDays: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
 		chargeType: this.formBuilder.nonNullable.control<MsedclChargeType>('ONLY_SOLAR_GENERATION', Validators.required)
 	});
 	private readonly routeSubscription: Subscription;
@@ -150,7 +151,7 @@ export class PeopleComponent implements OnDestroy {
 	openMsedclDetails(customer: EmployeeRecord): void {
 		this.selectedCustomer = customer;
 		this.editingMsedclId = null;
-		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
+		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, dueDays: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
 		this.msedclDialogVisible = true;
 		this.loadMsedclDetails();
 	}
@@ -163,13 +164,14 @@ export class PeopleComponent implements OnDestroy {
 			mobileNo: detail.mobileNo,
 			consumerNo: detail.consumerNo,
 			ratePerUnit: detail.ratePerUnit,
+			dueDays: detail.dueDays,
 			chargeType: detail.chargeType
 		});
 	}
 
 	resetMsedclForm(): void {
 		this.editingMsedclId = null;
-		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
+		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, dueDays: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
 	}
 
 	saveMsedclDetail(): void {

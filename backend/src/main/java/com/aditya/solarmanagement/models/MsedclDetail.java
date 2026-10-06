@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,6 +47,9 @@ public class MsedclDetail {
 	@Column(name = "last_invoice_no", length = 160)
 	private String lastInvoiceNo;
 
+	@Column(name = "due_days", nullable = false)
+	private int dueDays;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "charge_type", nullable = false, length = 40)
 	private MsedclChargeType chargeType = MsedclChargeType.ONLY_SOLAR_GENERATION;
@@ -55,23 +59,25 @@ public class MsedclDetail {
 	private Employee customer;
 
 	public MsedclDetail(String billingUnit, String name, String mobileNo, String consumerNo, BigDecimal ratePerUnit,
-			MsedclChargeType chargeType) {
+			MsedclChargeType chargeType, int dueDays) {
 		this.billingUnit = billingUnit;
 		this.name = name;
 		this.mobileNo = mobileNo;
 		this.consumerNo = consumerNo;
 		this.ratePerUnit = ratePerUnit;
 		this.chargeType = chargeType == null ? MsedclChargeType.ONLY_SOLAR_GENERATION : chargeType;
+		this.dueDays = dueDays;
 	}
 
 	public void updateDetails(String billingUnit, String name, String mobileNo, String consumerNo,
-			BigDecimal ratePerUnit, MsedclChargeType chargeType) {
+			BigDecimal ratePerUnit, MsedclChargeType chargeType, int dueDays) {
 		this.billingUnit = billingUnit;
 		this.name = name;
 		this.mobileNo = mobileNo;
 		this.consumerNo = consumerNo;
 		this.ratePerUnit = ratePerUnit;
 		this.chargeType = chargeType == null ? MsedclChargeType.ONLY_SOLAR_GENERATION : chargeType;
+		this.dueDays = dueDays;
 	}
 
 	public void setCustomer(Employee customer) {

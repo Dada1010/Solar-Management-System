@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="017-add-invoice-due-date" author="aditya">
+		<addColumn tableName="msedcl_invoices">
+			<column name="due_days_snapshot" type="INT"/>
+			<column name="due_date" type="DATE"/>
+		</addColumn>
+		<update tableName="msedcl_invoices">
+			<column name="due_days_snapshot" valueNumeric="0"/>
+			<column name="due_date" valueComputed="invoice_date"/>
+		</update>
+		<addNotNullConstraint tableName="msedcl_invoices" columnName="due_days_snapshot" columnDataType="INT"/>
+		<addNotNullConstraint tableName="msedcl_invoices" columnName="due_date" columnDataType="DATE"/>
+	</changeSet>
+</databaseChangeLog>

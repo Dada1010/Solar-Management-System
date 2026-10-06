@@ -7,6 +7,7 @@ import { CompanyComponent } from '../features/company/company.component';
 import { PeopleComponent } from '../features/people/people.component';
 import { ConsumerDetailsComponent } from '../features/consumer-details/consumer-details.component';
 import { InvoiceComponent } from '../features/invoice/invoice.component';
+import { PaymentDetailsComponent } from '../features/payment-details/payment-details.component';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { InvoiceComponent } from '../features/invoice/invoice.component';
     BranchComponent,
     PeopleComponent,
     ConsumerDetailsComponent,
-    InvoiceComponent
+    InvoiceComponent,
+    PaymentDetailsComponent
   ],
   imports: [SharedModule, RouterModule],
   exports: [WorkspaceShellComponent]

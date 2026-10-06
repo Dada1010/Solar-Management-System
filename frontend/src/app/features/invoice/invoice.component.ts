@@ -2,8 +2,9 @@ import { Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } fro
 import { FormBuilder, Validators } from '@angular/forms';
 import { MenuItem, MessageService } from 'primeng/api';
 import { Menu } from 'primeng/menu';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin, Subscription } from 'rxjs';
-import { InvoicePaymentPayload, InvoicePaymentRecord, MsedclDetailRecord, MsedclInvoicePayload, MsedclInvoiceRecord } from '../../core/models/api.models';
+import { InvoicePaymentPayload, InvoicePaymentRecord, InvoicePaymentType, MsedclDetailRecord, MsedclInvoicePayload, MsedclInvoiceRecord } from '../../core/models/api.models';
 import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
 
@@ -27,10 +28,15 @@ export class InvoiceComponent implements OnDestroy {
 	loadingPayments = false;
 	savingPayment = false;
 	paymentDialogVisible = false;
+	paymentEntryVisible = false;
+	billPreviewVisible = false;
+	billPreviewUrl: SafeResourceUrl | null = null;
 	formVisible = false;
 	printRecord: MsedclInvoiceRecord | null = null;
 	uploadingInvoiceId: number | null = null;
 	private uploadTargetInvoice: MsedclInvoiceRecord | null = null;
+	private billObjectUrl: string | null = null;
+	private readonly sanitizer = inject(DomSanitizer);
 	@ViewChild('msebBillPicker') private msebBillPicker?: ElementRef<HTMLInputElement>;
 	readonly form = this.formBuilder.group({
 		msedclDetailId: this.formBuilder.control<number | null>(null, Validators.required),
@@ -48,6 +54,8 @@ export class InvoiceComponent implements OnDestroy {
 	readonly paymentForm = this.formBuilder.nonNullable.group({
 		paymentDate: [this.today(), Validators.required],
 		amount: [0, [Validators.required, Validators.min(0.01)]],
+		paymentType: this.formBuilder.nonNullable.control<InvoicePaymentType>('CASH', Validators.required),
+		transactionNo: [''],
 		note: ['', Validators.maxLength(255)]
 	});
 	private readonly formSubscription: Subscription;
@@ -67,6 +75,10 @@ export class InvoiceComponent implements OnDestroy {
 
 	get canRecordPayment(): boolean {
 		return this.canCreate;
+	}
+
+	get isUpiPayment(): boolean {
+		return this.paymentForm.controls.paymentType.value === 'UPI';
 	}
 
 	get selectedDetail(): MsedclDetailRecord | undefined {
@@ -92,6 +104,18 @@ export class InvoiceComponent implements OnDestroy {
 
 	ngOnDestroy(): void {
 		this.formSubscription.unsubscribe();
+		this.revokeBillPreview();
+	}
+
+	onPaymentTypeChange(): void {
+		const transactionNo = this.paymentForm.controls.transactionNo;
+		if (this.isUpiPayment) {
+			transactionNo.setValidators([Validators.required, Validators.maxLength(100)]);
+		} else {
+			transactionNo.clearValidators();
+			transactionNo.setValue('');
+		}
+		transactionNo.updateValueAndValidity();
 	}
 
 	@HostListener('window:afterprint')
@@ -181,16 +205,38 @@ export class InvoiceComponent implements OnDestroy {
 		});
 	}
 
+	viewMsebBill(invoice: MsedclInvoiceRecord): void {
+		if (invoice.id === null) return;
+		this.api.downloadInvoiceMsebBill(invoice.id).subscribe({
+			next: (response) => {
+				if (!response.body) return;
+				this.revokeBillPreview();
+				this.billObjectUrl = URL.createObjectURL(response.body);
+				this.billPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.billObjectUrl);
+				this.billPreviewVisible = true;
+			},
+			error: (error: unknown) => this.showError('Could not view MSEB bill', error)
+		});
+	}
+
+	closeBillPreview(): void {
+		this.billPreviewVisible = false;
+		this.revokeBillPreview();
+	}
+
 	openInvoiceActions(invoice: MsedclInvoiceRecord, event: Event, menu: Menu): void {
 		this.invoiceActionItems = [
 			{ label: 'Print invoice', icon: 'pi pi-print', command: () => this.printInvoice(invoice) }
 		];
 		if (invoice.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT') {
 			this.invoiceActionItems.push(invoice.msebBillFileName
-				? { label: 'Download MSEB bill', icon: 'pi pi-download', command: () => this.downloadMsebBill(invoice) }
+				? { label: 'View uploaded MSEB bill', icon: 'pi pi-eye', command: () => this.viewMsebBill(invoice) }
 				: { label: 'Upload MSEB bill', icon: 'pi pi-upload', disabled: !this.canCreate, command: () => this.openMsebBillPicker(invoice) });
 		}
-		this.invoiceActionItems.push({ label: 'Payment history', icon: 'pi pi-wallet', command: () => this.openPaymentHistory(invoice) });
+		this.invoiceActionItems.push({ label: 'Payment details', icon: 'pi pi-list', command: () => this.openPaymentHistory(invoice) });
+		if (this.canRecordPayment && invoice.balanceAmount > 0) {
+			this.invoiceActionItems.push({ label: 'Add payment', icon: 'pi pi-plus-circle', command: () => this.openPaymentHistory(invoice, true) });
+		}
 		menu.toggle(event);
 	}
 
@@ -221,11 +267,13 @@ export class InvoiceComponent implements OnDestroy {
 		});
 	}
 
-	openPaymentHistory(invoice: MsedclInvoiceRecord): void {
+	openPaymentHistory(invoice: MsedclInvoiceRecord, openEntry = false): void {
 		if (invoice.id === null) return;
 		this.selectedPaymentInvoice = invoice;
 		this.paymentHistory = [];
-		this.paymentForm.reset({ paymentDate: this.today(), amount: 0, note: '' });
+		this.paymentForm.reset({ paymentDate: this.today(), amount: 0, paymentType: 'CASH', transactionNo: '', note: '' });
+		this.paymentEntryVisible = openEntry;
+		this.onPaymentTypeChange();
 		this.paymentDialogVisible = true;
 		this.loadingPayments = true;
 		this.api.invoicePayments(invoice.id).subscribe({
@@ -256,7 +304,8 @@ export class InvoiceComponent implements OnDestroy {
 			next: (payments) => {
 				this.paymentHistory = payments;
 				this.savingPayment = false;
-				this.paymentForm.reset({ paymentDate: this.today(), amount: 0, note: '' });
+				this.paymentForm.reset({ paymentDate: this.today(), amount: 0, paymentType: 'CASH', transactionNo: '', note: '' });
+				this.paymentEntryVisible = false;
 				this.loadInvoices();
 				this.messages.add({ severity: 'success', summary: 'Payment recorded', detail: 'Invoice balance updated.' });
 			},
@@ -301,6 +350,19 @@ export class InvoiceComponent implements OnDestroy {
 		});
 	}
 
+	private loadInvoices(): void {
+		this.api.invoices().subscribe({
+			next: (invoices) => {
+				this.invoices = invoices;
+				if (this.selectedPaymentInvoice) {
+					this.selectedPaymentInvoice = invoices.find((invoice) => invoice.id === this.selectedPaymentInvoice?.id)
+						?? this.selectedPaymentInvoice;
+				}
+			},
+		error: (error: unknown) => this.showError('Could not refresh invoices', error)
+		});
+	}
+
 	private payload(): MsedclInvoicePayload {
 		const value = this.form.getRawValue();
 		return {
@@ -334,5 +396,11 @@ export class InvoiceComponent implements OnDestroy {
 			? (error as { error?: { message?: string } }).error?.message
 			: undefined;
 		this.messages.add({ severity: 'error', summary, detail: responseMessage ?? 'Please try again.' });
+	}
+
+	private revokeBillPreview(): void {
+		if (this.billObjectUrl) URL.revokeObjectURL(this.billObjectUrl);
+		this.billObjectUrl = null;
+		this.billPreviewUrl = null;
 	}
 }

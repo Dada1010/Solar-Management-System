@@ -19,6 +19,8 @@ public record MsedclInvoiceResponse(
 		MsedclChargeType chargeType,
 		LocalDate invoiceDate,
 		LocalDate billingDate,
+		int dueDays,
+		LocalDate dueDate,
 		BigDecimal importCurrent,
 		BigDecimal importPrevious,
 		BigDecimal importConsumption,

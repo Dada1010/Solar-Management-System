@@ -30,16 +30,38 @@
 			</section>
 		</section>
 		<section class="directory-panel invoice-history"><div class="directory-heading"><strong>INVOICE HISTORY</strong><span>{{ invoices.length }} invoices</span></div>
-			<p-table [value]="invoices" [rowHover]="true" responsiveLayout="scroll" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '54rem' }">
-				<ng-template pTemplate="header"><tr><th>Actions</th><th>Invoice number</th><th>Invoice date</th><th>Billing date</th><th>Consumer</th><th>Consumer number</th><th>Solar units</th><th>Rate / unit</th><th>Invoice amount</th></tr></ng-template>
-				<ng-template pTemplate="body" let-invoice><tr><td class="invoice-row-actions"><p-button icon="pi pi-print" [text]="true" severity="secondary" aria-label="Print invoice" (onClick)="printInvoice(invoice)"></p-button><label class="upload-bill-control" *ngIf="canCreate && !invoice.msebBillFileName" [class.uploading]="uploadingInvoiceId === invoice.id"><i class="pi pi-upload"></i><span>{{ uploadingInvoiceId === invoice.id ? 'Uploading' : 'Upload MSEB bill' }}</span><input type="file" accept="application/pdf,image/jpeg,image/png" [disabled]="uploadingInvoiceId === invoice.id" aria-label="Upload MSEB bill" (change)="uploadMsebBill(invoice, $event)"></label><p-button *ngIf="invoice.msebBillFileName" icon="pi pi-download" [text]="true" severity="secondary" [attr.aria-label]="'Download ' + invoice.msebBillFileName" (onClick)="downloadMsebBill(invoice)"></p-button></td><td>{{ invoice.invoiceNo }}</td><td>{{ invoice.invoiceDate }}</td><td>{{ invoice.billingDate }}</td><td>{{ invoice.consumerName }}</td><td>{{ invoice.consumerNo }}</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }}</td><td>{{ invoice.ratePerUnit | number:'1.2-4' }}</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr></ng-template>
-				<ng-template pTemplate="emptymessage"><tr><td colspan="9" class="empty-cell">No invoices yet.</td></tr></ng-template>
+			<p-table [value]="invoices" [rowHover]="true" responsiveLayout="scroll" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '78rem' }">
+				<ng-template pTemplate="header"><tr><th>Invoice number</th><th>Invoice date</th><th>Due date</th><th>Billing date</th><th>Consumer</th><th>Consumer number</th><th>Solar units</th><th>Rate / unit</th><th>Invoice amount</th><th>Paid amount</th><th>Balance amount</th><th class="invoice-actions-cell">Actions</th></tr></ng-template>
+				<ng-template pTemplate="body" let-invoice><tr><td>{{ invoice.invoiceNo }}</td><td>{{ invoice.invoiceDate }}</td><td>{{ invoice.dueDate }}</td><td>{{ invoice.billingDate }}</td><td>{{ invoice.consumerName }}</td><td>{{ invoice.consumerNo }}</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }}</td><td>{{ invoice.ratePerUnit | number:'1.2-4' }}</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</td><td class="invoice-actions-cell"><p-button icon="pi pi-ellipsis-v" [text]="true" severity="secondary" aria-label="Invoice actions" (onClick)="openInvoiceActions(invoice, $event, invoiceMenu)"></p-button></td></tr></ng-template>
+				<ng-template pTemplate="emptymessage"><tr><td colspan="12" class="empty-cell">No invoices yet.</td></tr></ng-template>
 			</p-table>
 		</section>
 	</ng-container>
+	<p-menu #invoiceMenu [model]="invoiceActionItems" [popup]="true" appendTo="body"></p-menu>
+	<input #msebBillPicker class="file-picker" type="file" accept="application/pdf,image/jpeg,image/png" aria-label="Choose MSEB bill" (change)="uploadSelectedMsebBill($event)">
+	<p-dialog [(visible)]="paymentDialogVisible" [header]="'Payment history' + (selectedPaymentInvoice ? ' · ' + selectedPaymentInvoice.invoiceNo : '')" [modal]="true" [draggable]="false" [style]="{ width: 'min(46rem, 96vw)' }">
+		<div class="payment-summary" *ngIf="selectedPaymentInvoice as invoice"><div><span>Invoice total</span><strong>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Paid amount</span><strong>{{ invoice.paidAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Balance amount</span><strong>{{ invoice.balanceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
+		<form *ngIf="canRecordPayment && paymentEntryVisible && selectedPaymentInvoice?.balanceAmount" [formGroup]="paymentForm" class="payment-form" (ngSubmit)="addPayment()">
+			<label>Payment date<input pInputText type="date" formControlName="paymentDate"></label>
+			<label>Amount received<input pInputText type="number" min="0.01" step="0.01" formControlName="amount"></label>
+			<label>Payment type<select formControlName="paymentType" (change)="onPaymentTypeChange()"><option value="CASH">Cash</option><option value="UPI">UPI</option></select></label>
+			<label *ngIf="isUpiPayment">Transaction number<input pInputText maxlength="100" formControlName="transactionNo"></label>
+			<label>Reference / note<input pInputText maxlength="255" formControlName="note"></label>
+			<p-button label="Record payment" icon="pi pi-check" type="submit" [loading]="savingPayment" [disabled]="paymentForm.invalid"></p-button>
+		</form>
+		<div class="payment-loading" *ngIf="loadingPayments" role="status">Loading payment history…</div>
+		<p-table *ngIf="!loadingPayments" [value]="paymentHistory" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '26rem' }">
+			<ng-template pTemplate="header"><tr><th>Date</th><th>Amount received</th><th>Payment type</th><th>Transaction number</th><th>Reference / note</th></tr></ng-template>
+			<ng-template pTemplate="body" let-payment><tr><td>{{ payment.paymentDate }}</td><td>{{ payment.amount | currency:'INR':'symbol':'1.2-2' }}</td><td>{{ payment.paymentType }}</td><td>{{ payment.transactionNo || '—' }}</td><td>{{ payment.note || '—' }}</td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="5" class="empty-cell">No payments recorded yet.</td></tr></ng-template>
+		</p-table>
+	</p-dialog>
+	<p-dialog [(visible)]="billPreviewVisible" [header]="'MSEB bill'" [modal]="true" [draggable]="false" [style]="{ width: 'min(58rem, 96vw)' }" (onHide)="closeBillPreview()">
+		<iframe *ngIf="billPreviewUrl" class="bill-preview-frame" [src]="billPreviewUrl" title="Uploaded MSEB bill"></iframe>
+	</p-dialog>
 	<section class="invoice-print" *ngIf="printRecord as invoice">
 		<header class="print-header"><div><strong>ADITYA SOLAR</strong><span>Consumer energy invoice</span></div><div class="print-number"><span>Invoice number</span><strong>{{ invoice.invoiceNo }}</strong><span>Invoice date: {{ invoice.invoiceDate }}</span></div></header>
-		<div class="print-consumer"><div><span>Consumer</span><strong>{{ invoice.consumerName }}</strong></div><div><span>Consumer number</span><strong>{{ invoice.consumerNo }}</strong></div><div><span>Billing unit</span><strong>{{ invoice.billingUnit }}</strong></div><div><span>Billing date</span><strong>{{ invoice.billingDate }}</strong></div></div>
+		<div class="print-consumer"><div><span>Consumer</span><strong>{{ invoice.consumerName }}</strong></div><div><span>Consumer number</span><strong>{{ invoice.consumerNo }}</strong></div><div><span>Billing unit</span><strong>{{ invoice.billingUnit }}</strong></div><div><span>Billing date</span><strong>{{ invoice.billingDate }}</strong></div><div><span>Due date</span><strong>{{ invoice.dueDate }}</strong></div></div>
 		<h2>Meter readings</h2>
 		<table class="print-table"><thead><tr><th>Reading type</th><th>Current</th><th>Previous</th><th>Consumption</th></tr></thead><tbody><tr><td>Import</td><td>{{ invoice.importCurrent | number:'1.2-4' }}</td><td>{{ invoice.importPrevious | number:'1.2-4' }}</td><td>{{ invoice.importConsumption | number:'1.2-4' }}</td></tr><tr><td>Export</td><td>{{ invoice.exportCurrent | number:'1.2-4' }}</td><td>{{ invoice.exportPrevious | number:'1.2-4' }}</td><td>{{ invoice.exportConsumption | number:'1.2-4' }}</td></tr><tr><td>Generation</td><td>{{ invoice.generationCurrent | number:'1.2-4' }}</td><td>{{ invoice.generationPrevious | number:'1.2-4' }}</td><td>{{ invoice.generationConsumption | number:'1.2-4' }}</td></tr></tbody></table>
 		<h2>Solar calculation</h2>

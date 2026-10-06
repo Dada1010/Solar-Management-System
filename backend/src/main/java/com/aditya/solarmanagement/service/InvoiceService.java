@@ -17,6 +17,7 @@ public interface InvoiceService {
 	MsedclInvoiceResponse uploadMsebBill(String requestingEmail, Long invoiceId, MultipartFile file);
 	InvoiceAttachmentDownload downloadMsebBill(String requestingEmail, Long invoiceId);
 	List<InvoicePaymentResponse> paymentHistory(String requestingEmail, Long invoiceId);
+	List<InvoicePaymentResponse> allPayments(String requestingEmail);
 	List<InvoicePaymentResponse> addPayment(String requestingEmail, Long invoiceId, InvoicePaymentRequest request);
 	boolean hasInvoicesForDetail(Long detailId);
 

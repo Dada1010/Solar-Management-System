@@ -62,6 +62,12 @@ public class MsedclInvoice {
 	@Column(name = "invoice_date", nullable = false)
 	private LocalDate invoiceDate;
 
+	@Column(name = "due_days_snapshot", nullable = false)
+	private int dueDays;
+
+	@Column(name = "due_date", nullable = false)
+	private LocalDate dueDate;
+
 	@Column(name = "billing_date", nullable = false)
 	private LocalDate billingDate;
 
@@ -131,7 +137,7 @@ public class MsedclInvoice {
 	@Column(name = "mseb_bill_uploaded_at")
 	private LocalDateTime msebBillUploadedAt;
 
-	public MsedclInvoice(MsedclDetail detail, LocalDate invoiceDate, LocalDate billingDate,
+	public MsedclInvoice(MsedclDetail detail, LocalDate invoiceDate, LocalDate billingDate, LocalDate dueDate,
 			BigDecimal importCurrent, BigDecimal importPrevious, BigDecimal importConsumption,
 			BigDecimal exportCurrent, BigDecimal exportPrevious, BigDecimal exportConsumption,
 			BigDecimal generationCurrent, BigDecimal generationPrevious, BigDecimal generationConsumption,
@@ -148,6 +154,8 @@ public class MsedclInvoice {
 		this.billingUnit = detail.getBillingUnit();
 		this.chargeType = detail.getChargeType();
 		this.invoiceDate = invoiceDate;
+		this.dueDays = detail.getDueDays();
+		this.dueDate = dueDate;
 		this.billingDate = billingDate;
 		this.importCurrent = importCurrent;
 		this.importPrevious = importPrevious;
