@@ -7,4 +7,7 @@
 	<include file="db/changelog/changes/002-create-branches.xml"/>
 	<include file="db/changelog/changes/003-create-employees.xml"/>
 	<include file="db/changelog/changes/004-align-employee-boolean-columns.xml"/>
+	<include file="db/changelog/changes/005-create-customer-msedcl-details.xml"/>
+	<include file="db/changelog/changes/006-add-msedcl-charge-type.xml"/>
+	<include file="db/changelog/changes/007-default-msedcl-charge-type.xml"/>
 </databaseChangeLog>

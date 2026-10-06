@@ -84,6 +84,27 @@ export interface EmployeePayload {
   employeeType: EmployeeType;
 }
 
+export interface MsedclDetailRecord {
+  id: number;
+  billingUnit: string;
+  name: string;
+  mobileNo: string;
+  consumerNo: string;
+  ratePerUnit: number;
+  chargeType: MsedclChargeType;
+}
+
+export type MsedclChargeType = 'ONLY_SOLAR_GENERATION' | 'SOLAR_PLUS_MSEB_BILL_AMOUNT';
+
+export interface MsedclDetailPayload {
+  billingUnit: string;
+  name: string;
+  mobileNo: string;
+  consumerNo: string;
+  ratePerUnit: number;
+  chargeType: MsedclChargeType;
+}
+
 export interface PageResult<T> {
   items: T[];
   page: number;

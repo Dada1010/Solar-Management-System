@@ -8,8 +8,13 @@ import com.aditya.solarmanagement.dto.CompanyRequest;
 import com.aditya.solarmanagement.dto.CompanyResponse;
 import com.aditya.solarmanagement.dto.EmployeeRequest;
 import com.aditya.solarmanagement.dto.EmployeeResponse;
+import com.aditya.solarmanagement.dto.EffectiveRateRequest;
+import com.aditya.solarmanagement.dto.EffectiveRateResponse;
+import com.aditya.solarmanagement.dto.MsedclDetailRequest;
+import com.aditya.solarmanagement.dto.MsedclDetailResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
 import com.aditya.solarmanagement.models.Employee;
+import com.aditya.solarmanagement.models.EffectiveRateOwnerType;
 
 public interface ManagementService {
 	PageResponse<CompanyResponse> companies(int page, int size);
@@ -26,4 +31,13 @@ public interface ManagementService {
 	EmployeeResponse employee(Long id);
 	EmployeeResponse addEmployee(EmployeeRequest request);
 	EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
+	List<MsedclDetailResponse> msedclDetails(Long customerId);
+	MsedclDetailResponse addMsedclDetail(Long customerId, MsedclDetailRequest request);
+	MsedclDetailResponse updateMsedclDetail(Long customerId, Long detailId, MsedclDetailRequest request);
+	void deleteMsedclDetail(Long customerId, Long detailId);
+	List<EffectiveRateResponse> effectiveRates(EffectiveRateOwnerType ownerType, Long ownerId);
+	EffectiveRateResponse addEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, EffectiveRateRequest request);
+	EffectiveRateResponse updateEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, Long rateId,
+			EffectiveRateRequest request);
+	void deleteEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, Long rateId);
 }

@@ -1,6 +1,7 @@
 package com.aditya.solarmanagement.models;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,7 +11,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -65,6 +70,10 @@ public class Employee {
 	@JoinColumn(name = "branch_id", nullable = false)
 	private Branch branch;
 
+	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OrderBy("id ASC")
+	private List<MsedclDetail> msedclDetails = new ArrayList<>();
+
 	public Employee(String firstName, String lastName, String address, String mobileNo, String emailAddress,
 			String passwordHash, EmployeeType employeeType, EmployeeRole role, Branch branch) {
 		this.firstName = firstName;
@@ -88,6 +97,23 @@ public class Employee {
 		this.employeeType = employeeType;
 		this.role = role;
 		this.branch = branch;
+	}
+
+	public void replaceMsedclDetails(List<MsedclDetail> details) {
+		this.msedclDetails.clear();
+		for (MsedclDetail detail : details) {
+			detail.setCustomer(this);
+			this.msedclDetails.add(detail);
+		}
+	}
+
+	public void addMsedclDetail(MsedclDetail detail) {
+		detail.setCustomer(this);
+		this.msedclDetails.add(detail);
+	}
+
+	public boolean removeMsedclDetail(MsedclDetail detail) {
+		return this.msedclDetails.remove(detail);
 	}
 
 	public boolean mustChangePassword() { return mustChangePassword; }

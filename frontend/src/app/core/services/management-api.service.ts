@@ -11,6 +11,8 @@ import {
   EmployeePayload,
   EmployeeRecord,
   EmployeeType,
+  MsedclDetailPayload,
+  MsedclDetailRecord,
   PageResult
 } from '../models/api.models';
 import { unwrap } from './api-envelope';
@@ -75,6 +77,22 @@ export class ManagementApiService {
 
   updateEmployee(id: number, payload: EmployeePayload): Observable<EmployeeRecord> {
     return this.put(`/employees/${id}`, payload);
+  }
+
+  customerMsedclDetails(customerId: number): Observable<MsedclDetailRecord[]> {
+    return this.get(`/employees/${customerId}/msedcl-details`);
+  }
+
+  addCustomerMsedclDetail(customerId: number, payload: MsedclDetailPayload): Observable<MsedclDetailRecord> {
+    return this.post(`/employees/${customerId}/msedcl-details`, payload);
+  }
+
+  updateCustomerMsedclDetail(customerId: number, detailId: number, payload: MsedclDetailPayload): Observable<MsedclDetailRecord> {
+    return this.put(`/employees/${customerId}/msedcl-details/${detailId}`, payload);
+  }
+
+  deleteCustomerMsedclDetail(customerId: number, detailId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/employees/${customerId}/msedcl-details/${detailId}`).pipe(map(unwrap));
   }
 
   private get<T>(path: string): Observable<T> {

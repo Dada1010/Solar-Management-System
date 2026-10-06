@@ -3,7 +3,15 @@ import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { forkJoin, map, of, Subscription } from 'rxjs';
-import { BranchRecord, EmployeePayload, EmployeeRecord, EmployeeType } from '../../core/models/api.models';
+import {
+	BranchRecord,
+	EmployeePayload,
+	EmployeeRecord,
+	EmployeeType,
+	MsedclChargeType,
+	MsedclDetailPayload,
+	MsedclDetailRecord
+} from '../../core/models/api.models';
 import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
 
@@ -22,7 +30,13 @@ export class PeopleComponent implements OnDestroy {
 	loading = false;
 	saving = false;
 	dialogVisible = false;
+	msedclDialogVisible = false;
+	msedclLoading = false;
+	msedclSaving = false;
 	editingId: number | null = null;
+	editingMsedclId: number | null = null;
+	selectedCustomer: EmployeeRecord | null = null;
+	msedclRows: MsedclDetailRecord[] = [];
 	page = 0;
 	size = 10;
 	totalRecords = 0;
@@ -35,6 +49,14 @@ export class PeopleComponent implements OnDestroy {
 		mobileNo: [''],
 		address: [''],
 		branchId: this.formBuilder.control<number | null>(null, Validators.required)
+	});
+	readonly msedclForm = this.formBuilder.nonNullable.group({
+		billingUnit: ['', Validators.required],
+		name: ['', Validators.required],
+		mobileNo: ['', Validators.required],
+		consumerNo: ['', Validators.required],
+		ratePerUnit: [0, [Validators.required, Validators.min(0)]],
+		chargeType: this.formBuilder.nonNullable.control<MsedclChargeType>('ONLY_SOLAR_GENERATION', Validators.required)
 	});
 	private readonly routeSubscription: Subscription;
 
@@ -122,6 +144,82 @@ export class PeopleComponent implements OnDestroy {
 				this.dialogVisible = true;
 			},
 			error: (error: unknown) => this.handleError('Could not load person', error)
+		});
+	}
+
+	openMsedclDetails(customer: EmployeeRecord): void {
+		this.selectedCustomer = customer;
+		this.editingMsedclId = null;
+		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
+		this.msedclDialogVisible = true;
+		this.loadMsedclDetails();
+	}
+
+	editMsedclDetail(detail: MsedclDetailRecord): void {
+		this.editingMsedclId = detail.id;
+		this.msedclForm.patchValue({
+			billingUnit: detail.billingUnit,
+			name: detail.name,
+			mobileNo: detail.mobileNo,
+			consumerNo: detail.consumerNo,
+			ratePerUnit: detail.ratePerUnit,
+			chargeType: detail.chargeType
+		});
+	}
+
+	resetMsedclForm(): void {
+		this.editingMsedclId = null;
+		this.msedclForm.reset({ billingUnit: '', name: '', mobileNo: '', consumerNo: '', ratePerUnit: 0, chargeType: 'ONLY_SOLAR_GENERATION' });
+	}
+
+	saveMsedclDetail(): void {
+		if (!this.selectedCustomer || this.msedclForm.invalid) {
+			this.msedclForm.markAllAsTouched();
+			return;
+		}
+		this.msedclSaving = true;
+		const payload: MsedclDetailPayload = this.msedclForm.getRawValue();
+		const request = this.editingMsedclId === null
+			? this.api.addCustomerMsedclDetail(this.selectedCustomer.id, payload)
+			: this.api.updateCustomerMsedclDetail(this.selectedCustomer.id, this.editingMsedclId, payload);
+		request.subscribe({
+			next: () => {
+				this.msedclSaving = false;
+				this.resetMsedclForm();
+				this.messages.add({ severity: 'success', summary: 'Saved', detail: 'MSEDCL detail saved successfully.' });
+				this.loadMsedclDetails();
+			},
+			error: (error: unknown) => {
+				this.msedclSaving = false;
+				this.handleError('Could not save MSEDCL detail', error);
+			}
+		});
+	}
+
+	removeMsedclDetail(detail: MsedclDetailRecord): void {
+		if (!this.selectedCustomer || !window.confirm(`Remove consumer ${detail.consumerNo}?`)) return;
+		this.api.deleteCustomerMsedclDetail(this.selectedCustomer.id, detail.id).subscribe({
+			next: () => {
+				if (this.editingMsedclId === detail.id) this.resetMsedclForm();
+				this.messages.add({ severity: 'success', summary: 'Removed', detail: 'MSEDCL detail removed.' });
+				this.loadMsedclDetails();
+			},
+			error: (error: unknown) => this.handleError('Could not remove MSEDCL detail', error)
+		});
+	}
+
+	private loadMsedclDetails(): void {
+		if (!this.selectedCustomer) return;
+		this.msedclLoading = true;
+		this.api.customerMsedclDetails(this.selectedCustomer.id).subscribe({
+			next: (details) => {
+				this.msedclRows = details;
+				this.msedclLoading = false;
+			},
+			error: (error: unknown) => {
+				this.msedclLoading = false;
+				this.handleError('Could not load MSEDCL details', error);
+			}
 		});
 	}
 

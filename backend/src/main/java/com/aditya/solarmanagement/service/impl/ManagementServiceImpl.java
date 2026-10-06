@@ -22,14 +22,23 @@ import com.aditya.solarmanagement.dto.CompanyRequest;
 import com.aditya.solarmanagement.dto.CompanyResponse;
 import com.aditya.solarmanagement.dto.EmployeeRequest;
 import com.aditya.solarmanagement.dto.EmployeeResponse;
+import com.aditya.solarmanagement.dto.EffectiveRateRequest;
+import com.aditya.solarmanagement.dto.EffectiveRateResponse;
+import com.aditya.solarmanagement.dto.MsedclDetailRequest;
+import com.aditya.solarmanagement.dto.MsedclDetailResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
 import com.aditya.solarmanagement.models.Branch;
 import com.aditya.solarmanagement.models.Company;
 import com.aditya.solarmanagement.models.Employee;
 import com.aditya.solarmanagement.models.EmployeeRole;
+import com.aditya.solarmanagement.models.EffectiveRate;
+import com.aditya.solarmanagement.models.EffectiveRateOwnerType;
+import com.aditya.solarmanagement.models.MsedclDetail;
 import com.aditya.solarmanagement.repo.BranchRepository;
 import com.aditya.solarmanagement.repo.CompanyRepository;
 import com.aditya.solarmanagement.repo.EmployeeRepository;
+import com.aditya.solarmanagement.repo.EffectiveRateRepository;
+import com.aditya.solarmanagement.repo.MsedclDetailRepository;
 import com.aditya.solarmanagement.repo.specification.BranchSpecifications;
 import com.aditya.solarmanagement.repo.specification.EmployeeSpecifications;
 import com.aditya.solarmanagement.service.ManagementService;
@@ -41,13 +50,17 @@ public class ManagementServiceImpl implements ManagementService {
 	private final CompanyRepository companies;
 	private final BranchRepository branches;
 	private final EmployeeRepository employees;
+	private final MsedclDetailRepository msedclDetails;
+	private final EffectiveRateRepository effectiveRates;
 	private final PasswordEncoder passwordEncoder;
 
 	public ManagementServiceImpl(CompanyRepository companies, BranchRepository branches, EmployeeRepository employees,
-			PasswordEncoder passwordEncoder) {
+			MsedclDetailRepository msedclDetails, EffectiveRateRepository effectiveRates, PasswordEncoder passwordEncoder) {
 		this.companies = companies;
 		this.branches = branches;
 		this.employees = employees;
+		this.msedclDetails = msedclDetails;
+		this.effectiveRates = effectiveRates;
 		this.passwordEncoder = passwordEncoder;
 	}
 
@@ -228,6 +241,162 @@ public class ManagementServiceImpl implements ManagementService {
 		logger.info("Updated employee id={} for branch id={}", id, branch.getId());
 		return employeeResponse(updatedEmployee);
 	}
+
+	@Override
+	public List<MsedclDetailResponse> msedclDetails(Long customerId) {
+		logger.debug("Listing MSEDCL details for customer id={}", customerId);
+		Employee customer = customer(customerId);
+		return customer.getMsedclDetails().stream().map(this::msedclDetailResponse).toList();
+	}
+
+	@Override
+	@Transactional
+	public MsedclDetailResponse addMsedclDetail(Long customerId, MsedclDetailRequest request) {
+		Employee customer = customer(customerId);
+		String consumerNo = request.consumerNo().trim();
+		if (msedclDetails.existsByConsumerNoIgnoreCase(consumerNo)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
+		}
+		MsedclDetail detail = new MsedclDetail(request.billingUnit().trim(), request.name().trim(),
+				request.mobileNo().trim(), consumerNo, request.ratePerUnit(), request.chargeType());
+		customer.addMsedclDetail(detail);
+		employees.save(customer);
+		logger.info("Added MSEDCL detail id={} for customer id={}", detail.getId(), customerId);
+		return msedclDetailResponse(detail);
+	}
+
+	@Override
+	@Transactional
+	public MsedclDetailResponse updateMsedclDetail(Long customerId, Long detailId, MsedclDetailRequest request) {
+		Employee customer = customer(customerId);
+		MsedclDetail detail = customer.getMsedclDetails().stream()
+				.filter(item -> item.getId().equals(detailId))
+				.findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MSEDCL detail not found"));
+		String consumerNo = request.consumerNo().trim();
+		if (msedclDetails.existsByConsumerNoIgnoreCaseAndIdNot(consumerNo, detailId)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
+		}
+		detail.updateDetails(request.billingUnit().trim(), request.name().trim(), request.mobileNo().trim(),
+				consumerNo, request.ratePerUnit(), request.chargeType());
+		logger.info("Updated MSEDCL detail id={} for customer id={}", detailId, customerId);
+		return msedclDetailResponse(detail);
+	}
+
+	@Override
+	@Transactional
+	public void deleteMsedclDetail(Long customerId, Long detailId) {
+		Employee customer = customer(customerId);
+		MsedclDetail detail = customer.getMsedclDetails().stream()
+				.filter(item -> item.getId().equals(detailId))
+				.findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MSEDCL detail not found"));
+		customer.removeMsedclDetail(detail);
+		logger.info("Removed MSEDCL detail id={} from customer id={}", detailId, customerId);
+	}
+
+	private Employee customer(Long customerId) {
+		Employee employee = employees.findById(customerId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+		if (employee.getEmployeeType() != Employee.EmployeeType.CUSTOMER) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "MSEDCL details can only be added to customers");
+		}
+		return employee;
+	}
+
+	private MsedclDetailResponse msedclDetailResponse(MsedclDetail detail) {
+		return new MsedclDetailResponse(detail.getId(), detail.getBillingUnit(), detail.getName(), detail.getMobileNo(),
+				detail.getConsumerNo(), detail.getRatePerUnit(), detail.getChargeType());
+	}
+
+	@Override
+	public List<EffectiveRateResponse> effectiveRates(EffectiveRateOwnerType ownerType, Long ownerId) {
+		logger.debug("Listing effective rates ownerType={} ownerId={}", ownerType, ownerId);
+		return ratesFor(ownerType, ownerId).stream().map(this::effectiveRateResponse).toList();
+	}
+
+	@Override
+	@Transactional
+	public EffectiveRateResponse addEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId,
+			EffectiveRateRequest request) {
+		RateOwner owner = rateOwner(ownerType, ownerId);
+		if (rateExists(ownerType, ownerId, request.startDate(), null)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "A rate already exists for this start date");
+		}
+		EffectiveRate rate = new EffectiveRate(request.startDate(), request.ratePerUnit(), owner.company(), owner.branch(),
+				owner.msedclDetail());
+		EffectiveRate saved = effectiveRates.save(rate);
+		logger.info("Added effective rate id={} ownerType={} ownerId={}", saved.getId(), ownerType, ownerId);
+		return effectiveRateResponse(saved);
+	}
+
+	@Override
+	@Transactional
+	public EffectiveRateResponse updateEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, Long rateId,
+			EffectiveRateRequest request) {
+		EffectiveRate rate = ratesFor(ownerType, ownerId).stream()
+				.filter(item -> item.getId().equals(rateId))
+				.findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Effective rate not found"));
+		if (rateExists(ownerType, ownerId, request.startDate(), rateId)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "A rate already exists for this start date");
+		}
+		rate.updateDetails(request.startDate(), request.ratePerUnit());
+		logger.info("Updated effective rate id={} ownerType={} ownerId={}", rateId, ownerType, ownerId);
+		return effectiveRateResponse(rate);
+	}
+
+	@Override
+	@Transactional
+	public void deleteEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, Long rateId) {
+		EffectiveRate rate = ratesFor(ownerType, ownerId).stream()
+				.filter(item -> item.getId().equals(rateId))
+				.findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Effective rate not found"));
+		effectiveRates.delete(rate);
+		logger.info("Deleted effective rate id={} ownerType={} ownerId={}", rateId, ownerType, ownerId);
+	}
+
+	private List<EffectiveRate> ratesFor(EffectiveRateOwnerType ownerType, Long ownerId) {
+		rateOwner(ownerType, ownerId);
+		return switch (ownerType) {
+			case COMPANY -> effectiveRates.findAllByCompany_IdOrderByStartDateDescIdDesc(ownerId);
+			case BRANCH -> effectiveRates.findAllByBranch_IdOrderByStartDateDescIdDesc(ownerId);
+			case MSEDCL_DETAIL -> effectiveRates.findAllByMsedclDetail_IdOrderByStartDateDescIdDesc(ownerId);
+		};
+	}
+
+	private RateOwner rateOwner(EffectiveRateOwnerType ownerType, Long ownerId) {
+		return switch (ownerType) {
+			case COMPANY -> new RateOwner(companies.findById(ownerId)
+					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found")), null, null);
+			case BRANCH -> new RateOwner(null, branches.findById(ownerId)
+					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Branch not found")), null);
+			case MSEDCL_DETAIL -> new RateOwner(null, null, msedclDetails.findById(ownerId)
+					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MSEDCL detail not found")));
+		};
+	}
+
+	private boolean rateExists(EffectiveRateOwnerType ownerType, Long ownerId, java.time.LocalDate startDate,
+			Long excludedRateId) {
+		return switch (ownerType) {
+			case COMPANY -> excludedRateId == null
+					? effectiveRates.existsByCompany_IdAndStartDate(ownerId, startDate)
+					: effectiveRates.existsByCompany_IdAndStartDateAndIdNot(ownerId, startDate, excludedRateId);
+			case BRANCH -> excludedRateId == null
+					? effectiveRates.existsByBranch_IdAndStartDate(ownerId, startDate)
+					: effectiveRates.existsByBranch_IdAndStartDateAndIdNot(ownerId, startDate, excludedRateId);
+			case MSEDCL_DETAIL -> excludedRateId == null
+					? effectiveRates.existsByMsedclDetail_IdAndStartDate(ownerId, startDate)
+					: effectiveRates.existsByMsedclDetail_IdAndStartDateAndIdNot(ownerId, startDate, excludedRateId);
+		};
+	}
+
+	private EffectiveRateResponse effectiveRateResponse(EffectiveRate rate) {
+		return new EffectiveRateResponse(rate.getId(), rate.getStartDate(), rate.getRatePerUnit());
+	}
+
+	private record RateOwner(Company company, Branch branch, MsedclDetail msedclDetail) {}
 
 	private CompanyResponse companyResponse(Company company) {
 		return new CompanyResponse(company.getId(), company.getName(), company.getIndustry(), company.getAddress(),

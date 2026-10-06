@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="005-create-customer-msedcl-details" author="aditya">
+		<createTable tableName="customer_msedcl_details">
+			<column name="id" type="BIGINT" autoIncrement="true">
+				<constraints primaryKey="true" primaryKeyName="pk_customer_msedcl_details" nullable="false"/>
+			</column>
+			<column name="customer_id" type="BIGINT">
+				<constraints nullable="false" foreignKeyName="fk_customer_msedcl_customer"
+					references="employees(id)" deleteCascade="true"/>
+			</column>
+			<column name="billing_unit" type="VARCHAR(50)">
+				<constraints nullable="false"/>
+			</column>
+			<column name="name" type="VARCHAR(100)">
+				<constraints nullable="false"/>
+			</column>
+			<column name="mobile_no" type="VARCHAR(40)">
+				<constraints nullable="false"/>
+			</column>
+			<column name="consumer_no" type="VARCHAR(50)">
+				<constraints nullable="false" unique="true" uniqueConstraintName="uk_customer_msedcl_consumer_no"/>
+			</column>
+			<column name="rate_per_unit" type="DECIMAL(12,4)">
+				<constraints nullable="false"/>
+			</column>
+		</createTable>
+	</changeSet>
+</databaseChangeLog>

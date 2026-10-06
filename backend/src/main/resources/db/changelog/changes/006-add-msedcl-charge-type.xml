@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="006-add-msedcl-charge-type" author="aditya">
+		<addColumn tableName="customer_msedcl_details">
+			<column name="charge_type" type="VARCHAR(40)"/>
+		</addColumn>
+		<update tableName="customer_msedcl_details">
+			<column name="charge_type" value="ONLY_SOLAR_GENERATION"/>
+		</update>
+		<addNotNullConstraint tableName="customer_msedcl_details" columnName="charge_type"
+			columnDataType="VARCHAR(40)"/>
+	</changeSet>
+</databaseChangeLog>

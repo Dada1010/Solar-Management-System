@@ -20,4 +20,9 @@
 .wide { grid-column: 1 / -1; }
 .temporary-password { margin: 0; padding: 11px 12px; border-radius: 6px; color: #5d7668; background: #f0f5ec; font-size: 11px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 6px; }
+.msedcl-form { padding-bottom: 18px; border-bottom: 1px solid #e9eee8; }
+.msedcl-list { padding-top: 17px; }
+.msedcl-list-heading { display: flex; justify-content: space-between; margin-bottom: 10px; color: #516b5f; font-size: 11px; }
+.msedcl-list-heading span, .msedcl-loading { color: #87958e; font-size: 11px; }
+.msedcl-loading { padding: 20px 0; text-align: center; }
 @media (max-width: 600px) { .feature-heading { align-items: flex-start; flex-direction: column; } .form-grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
