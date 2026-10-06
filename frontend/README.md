@@ -1,59 +1,36 @@
-# SolarManagementFrontend
+# Frontend Setup
+
+Angular 21 web application shared by the browser app and the Capacitor mobile app.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.25.
 
-## Development server
+## Local Development
 
-To start a local development server, run:
+Requirements: Node.js compatible with Angular 21 and npm 10.9 or newer. From the `frontend` directory, install dependencies and start the development server:
 
-```bash
-ng serve
+```powershell
+npm ci
+npm start -- --host 127.0.0.1
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4200`. The local API URL is configured in `src/environments/environment.ts` and defaults to `http://localhost:8080/api/v1`.
 
-## Code scaffolding
+## Production and Mobile Configuration
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+The production build replaces `src/environments/environment.ts` with `src/environments/environment.production.ts`. Its API base URL is `/api/v1`; configure the deployed web server or reverse proxy to forward that path to the backend. Update `apiBaseUrl` in the production environment file before building if the API is hosted elsewhere.
 
-```bash
-ng generate component component-name
+The mobile build uses `src/environments/environment.mobile.ts`; the APK build steps are in `../mobile/README.md`.
+
+```powershell
+npm run build
+npm test
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Build output is written to `dist/solar-management-frontend/browser`. Environment values are bundled into browser JavaScript, so never put credentials or other secrets in these files.
 
-```bash
-ng generate --help
-```
+Environment files:
 
-## Building
+- `src/environments/environment.ts`: local browser API URL.
+- `src/environments/environment.production.ts`: production web API URL.
+- `src/environments/environment.mobile.ts`: Android/Capacitor API URL.
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
