@@ -3,10 +3,10 @@
 	<div class="directory-tools"><label class="filter-control"><i class="pi pi-search"></i><input pInputText [(ngModel)]="nameFilter" placeholder="Filter by branch name" aria-label="Filter by branch name" (keydown.enter)="applyFilter()"></label><p-button label="Filter" icon="pi pi-filter" severity="secondary" [outlined]="true" (onClick)="applyFilter()"></p-button><p-button *ngIf="nameFilter" icon="pi pi-times" severity="secondary" [text]="true" aria-label="Clear filter" (onClick)="clearFilter()"></p-button></div>
 	<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading branches…</span></div>
 	<section class="directory-panel" *ngIf="!loading"><div class="directory-heading"><strong>BRANCH DIRECTORY</strong><span>{{ totalRecords }} branches</span></div>
-		<p-table [value]="rows" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '44rem' }">
-			<ng-template pTemplate="header"><tr><th>Branch</th><th>Company</th><th>Address</th><th>Phone</th><th class="action-cell">Action</th></tr></ng-template>
-			<ng-template pTemplate="body" let-branch><tr><td>{{ branch.name }}</td><td>{{ branch.companyName }}</td><td>{{ branch.address || '—' }}</td><td>{{ branch.mobileNo || '—' }}</td><td class="action-cell"><p-button icon="pi pi-pencil" [text]="true" severity="secondary" aria-label="Edit branch" (onClick)="edit(branch)"></p-button></td></tr></ng-template>
-			<ng-template pTemplate="emptymessage"><tr><td colspan="5" class="empty-cell">No branches match this filter.</td></tr></ng-template>
+		<p-table [value]="rows" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '52rem' }">
+			<ng-template pTemplate="header"><tr><th>Branch</th><th>Company</th><th>Address</th><th>Phone</th><th>Effective rates</th><th class="action-cell">Action</th></tr></ng-template>
+			<ng-template pTemplate="body" let-branch><tr><td>{{ branch.name }}</td><td>{{ branch.companyName }}</td><td>{{ branch.address || '—' }}</td><td>{{ branch.mobileNo || '—' }}</td><td><app-effective-rate-manager ownerType="BRANCH" [ownerId]="branch.id" [ownerName]="branch.name"></app-effective-rate-manager></td><td class="action-cell"><p-button icon="pi pi-pencil" [text]="true" severity="secondary" aria-label="Edit branch" (onClick)="edit(branch)"></p-button></td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="6" class="empty-cell">No branches match this filter.</td></tr></ng-template>
 		</p-table>
 		<p-paginator [first]="page * size" [rows]="size" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50]" (onPageChange)="changePage($event)"></p-paginator>
 	</section>

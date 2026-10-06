@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="011-add-solar-bill-units" author="aditya">
+		<addColumn tableName="msedcl_invoices">
+			<column name="solar_bill_units" type="DECIMAL(14,4)"/>
+		</addColumn>
+		<update tableName="msedcl_invoices">
+			<column name="solar_bill_units" valueComputed="bank_solar_units"/>
+		</update>
+		<addNotNullConstraint tableName="msedcl_invoices" columnName="solar_bill_units"
+			columnDataType="DECIMAL(14,4)"/>
+	</changeSet>
+</databaseChangeLog>

@@ -1,0 +1,49 @@
+<section class="feature-page">
+	<header class="feature-heading"><div><p class="eyebrow">ADITYA SOLAR / BILLING</p><h1>Invoices</h1><p>Manage MSEDCL consumer invoices.</p></div><p-button *ngIf="canCreate" label="Add invoice" icon="pi pi-plus" (onClick)="openCreateForm()" [disabled]="loading || details.length === 0"></p-button></header>
+	<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading invoices…</span></div>
+	<ng-container *ngIf="!loading">
+		<section class="invoice-editor" *ngIf="canCreate && formVisible">
+			<div class="section-heading"><div><h2>New invoice</h2><p>Readings and rate are evaluated for the billing date.</p></div><p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelCreateForm()"></p-button></div>
+			<form [formGroup]="form" class="invoice-form" (ngSubmit)="preview()">
+				<label class="consumer-select">Consumer account<select formControlName="msedclDetailId"><option [ngValue]="null" disabled>Select consumer</option><option *ngFor="let detail of details" [ngValue]="detail.id">{{ detail.consumerNo }} · {{ detail.name }}</option></select></label>
+				<label>Invoice date<input pInputText type="date" formControlName="invoiceDate"></label>
+				<label>Billing date<input pInputText type="date" formControlName="billingDate"></label>
+				<div class="reading-section">
+					<h3>Import</h3>
+					<div class="reading-grid"><label>Current reading<input pInputText type="number" min="0" step="0.01" formControlName="importCurrent"></label><label>Previous reading<input pInputText type="number" min="0" step="0.01" formControlName="importPrevious"></label><label>Consumption<input pInputText type="number" [value]="importConsumption" readonly></label></div>
+				</div>
+				<div class="reading-section">
+					<h3>Export</h3>
+					<div class="reading-grid"><label>Current reading<input pInputText type="number" min="0" step="0.01" formControlName="exportCurrent"></label><label>Previous reading<input pInputText type="number" min="0" step="0.01" formControlName="exportPrevious"></label><label>Consumption<input pInputText type="number" [value]="exportConsumption" readonly></label></div>
+					<div class="solar-units"><label>Previous bank solar units<input pInputText type="number" min="0" step="0.01" formControlName="previousBankUnits"></label><div><span>Solar offset</span><strong>{{ previewResult?.solarOffsetUnits ?? '—' }}</strong></div><div><span>Bank solar units</span><strong>{{ previewResult?.bankSolarUnits ?? '—' }}</strong></div></div>
+				</div>
+				<div class="reading-section">
+					<h3>Generation</h3>
+					<div class="reading-grid"><label>Current reading<input pInputText type="number" min="0" step="0.01" formControlName="generationCurrent"></label><label>Previous reading<input pInputText type="number" min="0" step="0.01" formControlName="generationPrevious"></label><label>Consumption<input pInputText type="number" [value]="generationConsumption" readonly></label></div>
+				</div>
+				<label class="mseb-amount" *ngIf="showMsebBillAmount">MSEB bill amount<input pInputText type="number" min="0" step="0.01" formControlName="msebBillAmount"></label>
+				<div class="invoice-actions"><p-button label="Preview invoice" icon="pi pi-calculator" type="submit" [loading]="previewing" [disabled]="form.invalid || details.length === 0"></p-button><p-button label="Save invoice" icon="pi pi-check" severity="success" type="button" [loading]="saving" [disabled]="!previewResult || form.invalid" (onClick)="save()"></p-button></div>
+			</form>
+			<section class="invoice-preview" *ngIf="previewResult as invoice">
+				<div class="preview-heading"><div><strong>INVOICE PREVIEW</strong><span>{{ invoice.consumerNo }} · {{ invoice.billingDate }}</span></div><strong class="invoice-total">{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div>
+				<div class="preview-values"><div><span>Rate per unit</span><strong>{{ invoice.ratePerUnit | number:'1.2-4' }}<ng-container *ngIf="invoice.rateSource !== 'DETAIL_EFFECTIVE'"> · {{ invoice.rateSource | lowercase }}</ng-container></strong></div><div><span>Solar bill units</span><strong>{{ invoice.solarBillUnits | number:'1.2-4' }}</strong></div><div><span>Solar amount</span><strong>{{ invoice.solarAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div *ngIf="showMsebBillAmount"><span>MSEB bill amount</span><strong>{{ invoice.msebBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
+			</section>
+		</section>
+		<section class="directory-panel invoice-history"><div class="directory-heading"><strong>INVOICE HISTORY</strong><span>{{ invoices.length }} invoices</span></div>
+			<p-table [value]="invoices" [rowHover]="true" responsiveLayout="scroll" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '54rem' }">
+				<ng-template pTemplate="header"><tr><th>Actions</th><th>Invoice number</th><th>Invoice date</th><th>Billing date</th><th>Consumer</th><th>Consumer number</th><th>Solar units</th><th>Rate / unit</th><th>Invoice amount</th></tr></ng-template>
+				<ng-template pTemplate="body" let-invoice><tr><td class="invoice-row-actions"><p-button icon="pi pi-print" [text]="true" severity="secondary" aria-label="Print invoice" (onClick)="printInvoice(invoice)"></p-button><label class="upload-bill-control" *ngIf="canCreate && !invoice.msebBillFileName" [class.uploading]="uploadingInvoiceId === invoice.id"><i class="pi pi-upload"></i><span>{{ uploadingInvoiceId === invoice.id ? 'Uploading' : 'Upload MSEB bill' }}</span><input type="file" accept="application/pdf,image/jpeg,image/png" [disabled]="uploadingInvoiceId === invoice.id" aria-label="Upload MSEB bill" (change)="uploadMsebBill(invoice, $event)"></label><p-button *ngIf="invoice.msebBillFileName" icon="pi pi-download" [text]="true" severity="secondary" [attr.aria-label]="'Download ' + invoice.msebBillFileName" (onClick)="downloadMsebBill(invoice)"></p-button></td><td>{{ invoice.invoiceNo }}</td><td>{{ invoice.invoiceDate }}</td><td>{{ invoice.billingDate }}</td><td>{{ invoice.consumerName }}</td><td>{{ invoice.consumerNo }}</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }}</td><td>{{ invoice.ratePerUnit | number:'1.2-4' }}</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr></ng-template>
+				<ng-template pTemplate="emptymessage"><tr><td colspan="9" class="empty-cell">No invoices yet.</td></tr></ng-template>
+			</p-table>
+		</section>
+	</ng-container>
+	<section class="invoice-print" *ngIf="printRecord as invoice">
+		<header class="print-header"><div><strong>ADITYA SOLAR</strong><span>Consumer energy invoice</span></div><div class="print-number"><span>Invoice number</span><strong>{{ invoice.invoiceNo }}</strong><span>Invoice date: {{ invoice.invoiceDate }}</span></div></header>
+		<div class="print-consumer"><div><span>Consumer</span><strong>{{ invoice.consumerName }}</strong></div><div><span>Consumer number</span><strong>{{ invoice.consumerNo }}</strong></div><div><span>Billing unit</span><strong>{{ invoice.billingUnit }}</strong></div><div><span>Billing date</span><strong>{{ invoice.billingDate }}</strong></div></div>
+		<h2>Meter readings</h2>
+		<table class="print-table"><thead><tr><th>Reading type</th><th>Current</th><th>Previous</th><th>Consumption</th></tr></thead><tbody><tr><td>Import</td><td>{{ invoice.importCurrent | number:'1.2-4' }}</td><td>{{ invoice.importPrevious | number:'1.2-4' }}</td><td>{{ invoice.importConsumption | number:'1.2-4' }}</td></tr><tr><td>Export</td><td>{{ invoice.exportCurrent | number:'1.2-4' }}</td><td>{{ invoice.exportPrevious | number:'1.2-4' }}</td><td>{{ invoice.exportConsumption | number:'1.2-4' }}</td></tr><tr><td>Generation</td><td>{{ invoice.generationCurrent | number:'1.2-4' }}</td><td>{{ invoice.generationPrevious | number:'1.2-4' }}</td><td>{{ invoice.generationConsumption | number:'1.2-4' }}</td></tr></tbody></table>
+		<h2>Solar calculation</h2>
+		<table class="print-table"><tbody><tr><td>Generation consumption</td><td>{{ invoice.generationConsumption | number:'1.2-4' }} units</td></tr><tr><td>Previous bank solar units</td><td>{{ invoice.previousBankUnits | number:'1.2-4' }} units</td></tr><tr><td>Bank solar units</td><td>{{ invoice.bankSolarUnits | number:'1.2-4' }} units</td></tr><tr class="print-emphasis"><td>Solar bill units (generation + previous bank − bank solar)</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }} units</td></tr><tr><td>Rate per unit</td><td>{{ invoice.ratePerUnit | currency:'INR':'symbol':'1.2-4' }}</td></tr><tr><td>Solar amount</td><td>{{ invoice.solarAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr *ngIf="invoice.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT'"><td>MSEB bill amount</td><td>{{ invoice.msebBillAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr class="print-total"><td>Invoice amount</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr></tbody></table>
+		<footer>Generated by Aditya Solar Management System</footer>
+	</section>
+</section>

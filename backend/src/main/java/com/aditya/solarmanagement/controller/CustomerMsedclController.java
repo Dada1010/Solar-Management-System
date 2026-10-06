@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aditya.solarmanagement.dto.ApiResponse;
@@ -31,9 +33,13 @@ public class CustomerMsedclController {
 	}
 
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<MsedclDetailResponse>>> details(@PathVariable Long customerId) {
+	public ResponseEntity<ApiResponse<List<MsedclDetailResponse>>> details(@PathVariable Long customerId,
+			Authentication authentication,
+			@RequestParam(required = false) String name,
+			@RequestParam(required = false) String mobileNo,
+			@RequestParam(required = false) String consumerNo) {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "MSEDCL details retrieved successfully",
-				managementService.msedclDetails(customerId)));
+				managementService.msedclDetails(customerId, authentication.getName(), name, mobileNo, consumerNo)));
 	}
 
 	@PostMapping

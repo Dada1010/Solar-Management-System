@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="014-add-invoice-owner-ids" author="aditya">
+		<addColumn tableName="msedcl_invoices">
+			<column name="company_id" type="BIGINT"/>
+			<column name="branch_id" type="BIGINT"/>
+		</addColumn>
+		<sql>UPDATE msedcl_invoices i JOIN customer_msedcl_details d ON d.id = i.msedcl_detail_id JOIN employees e ON e.id = d.customer_id JOIN branches b ON b.id = e.branch_id SET i.company_id = b.company_id, i.branch_id = b.id</sql>
+		<addNotNullConstraint tableName="msedcl_invoices" columnName="company_id" columnDataType="BIGINT"/>
+		<addNotNullConstraint tableName="msedcl_invoices" columnName="branch_id" columnDataType="BIGINT"/>
+		<addForeignKeyConstraint baseTableName="msedcl_invoices" baseColumnNames="company_id"
+			referencedTableName="companies" referencedColumnNames="id" constraintName="fk_invoice_company"/>
+		<addForeignKeyConstraint baseTableName="msedcl_invoices" baseColumnNames="branch_id"
+			referencedTableName="branches" referencedColumnNames="id" constraintName="fk_invoice_branch"/>
+	</changeSet>
+</databaseChangeLog>

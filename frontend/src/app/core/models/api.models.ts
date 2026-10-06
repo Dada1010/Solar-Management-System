@@ -7,6 +7,18 @@ export interface ApiResponse<T> {
 
 export type EmployeeType = 'CUSTOMER' | 'COMPANY_EMPLOYEE';
 export type EmployeeRole = 'ADMIN' | 'USER' | 'CUSTOMER';
+export type EffectiveRateOwnerType = 'COMPANY' | 'BRANCH' | 'MSEDCL_DETAIL';
+
+export interface EffectiveRateRecord {
+  id: number;
+  startDate: string;
+  ratePerUnit: number;
+}
+
+export interface EffectiveRatePayload {
+  startDate: string;
+  ratePerUnit: number;
+}
 
 export interface LoginResult {
   token: string;
@@ -46,6 +58,7 @@ export interface BranchRecord {
 
 export interface EmployeeRecord {
   id: number;
+  companyId: number;
   branchId: number;
   branchName: string;
   firstName: string;
@@ -86,11 +99,15 @@ export interface EmployeePayload {
 
 export interface MsedclDetailRecord {
   id: number;
+  companyId: number;
+  branchId: number;
+  branchName: string;
   billingUnit: string;
   name: string;
   mobileNo: string;
   consumerNo: string;
   ratePerUnit: number;
+  lastInvoiceNo: string | null;
   chargeType: MsedclChargeType;
 }
 
@@ -103,6 +120,71 @@ export interface MsedclDetailPayload {
   consumerNo: string;
   ratePerUnit: number;
   chargeType: MsedclChargeType;
+}
+
+export interface MsedclInvoicePayload {
+  msedclDetailId: number;
+  invoiceDate: string;
+  billingDate: string;
+  importCurrent: number;
+  importPrevious: number;
+  exportCurrent: number;
+  exportPrevious: number;
+  generationCurrent: number;
+  generationPrevious: number;
+  previousBankUnits: number;
+  msebBillAmount: number | null;
+}
+
+export interface MsedclInvoiceRecord {
+  id: number | null;
+  invoiceId: number | null;
+  invoiceNo: string | null;
+  companyId: number;
+  branchId: number;
+  msedclDetailId: number;
+  consumerNo: string;
+  consumerName: string;
+  billingUnit: string;
+  chargeType: MsedclChargeType;
+  invoiceDate: string;
+  billingDate: string;
+  importCurrent: number;
+  importPrevious: number;
+  importConsumption: number;
+  exportCurrent: number;
+  exportPrevious: number;
+  exportConsumption: number;
+  generationCurrent: number;
+  generationPrevious: number;
+  generationConsumption: number;
+  previousBankUnits: number;
+  solarOffsetUnits: number;
+  bankSolarUnits: number;
+  solarBillUnits: number;
+  ratePerUnit: number;
+  rateSource: string;
+  solarAmount: number;
+  msebBillAmount: number;
+  invoiceAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  msebBillFileName: string | null;
+  msebBillUploadedAt: string | null;
+}
+
+export interface InvoicePaymentRecord {
+  id: number;
+  invoiceId: number;
+  paymentDate: string;
+  amount: number;
+  note: string | null;
+}
+
+export interface InvoicePaymentPayload {
+  paymentDate: string;
+  amount: number;
+  note: string;
 }
 
 export interface PageResult<T> {

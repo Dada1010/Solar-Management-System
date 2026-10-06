@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="013-add-mseb-bill-attachments" author="aditya">
+		<addColumn tableName="msedcl_invoices">
+			<column name="mseb_bill_storage_name" type="VARCHAR(100)"/>
+			<column name="mseb_bill_file_name" type="VARCHAR(255)"/>
+			<column name="mseb_bill_content_type" type="VARCHAR(100)"/>
+			<column name="mseb_bill_uploaded_at" type="DATETIME(6)"/>
+		</addColumn>
+	</changeSet>
+</databaseChangeLog>

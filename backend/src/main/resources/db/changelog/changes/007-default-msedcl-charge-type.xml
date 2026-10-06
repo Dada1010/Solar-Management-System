@@ -4,8 +4,9 @@
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 	<changeSet id="007-default-msedcl-charge-type" author="aditya">
-		<update tableName="customer_msedcl_details" where="charge_type IS NULL">
+		<update tableName="customer_msedcl_details">
 			<column name="charge_type" value="ONLY_SOLAR_GENERATION"/>
+			<where>charge_type IS NULL</where>
 		</update>
 		<addDefaultValue tableName="customer_msedcl_details" columnName="charge_type"
 			columnDataType="VARCHAR(40)" defaultValue="ONLY_SOLAR_GENERATION"/>

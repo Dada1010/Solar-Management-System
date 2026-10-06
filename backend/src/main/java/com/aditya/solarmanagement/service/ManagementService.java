@@ -31,7 +31,9 @@ public interface ManagementService {
 	EmployeeResponse employee(Long id);
 	EmployeeResponse addEmployee(EmployeeRequest request);
 	EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
-	List<MsedclDetailResponse> msedclDetails(Long customerId);
+	List<MsedclDetailResponse> consumerDetails(String requestingEmail, String name, String mobileNo, String consumerNo);
+	List<MsedclDetailResponse> msedclDetails(Long customerId, String requestingEmail, String name, String mobileNo,
+			String consumerNo);
 	MsedclDetailResponse addMsedclDetail(Long customerId, MsedclDetailRequest request);
 	MsedclDetailResponse updateMsedclDetail(Long customerId, Long detailId, MsedclDetailRequest request);
 	void deleteMsedclDetail(Long customerId, Long detailId);

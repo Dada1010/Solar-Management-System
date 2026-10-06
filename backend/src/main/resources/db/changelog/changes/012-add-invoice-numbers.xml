@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="012-add-invoice-numbers" author="aditya">
+		<addColumn tableName="msedcl_invoices">
+			<column name="invoice_no" type="VARCHAR(160)"/>
+		</addColumn>
+		<sql>UPDATE msedcl_invoices SET invoice_no = CONCAT(consumer_no_snapshot, '/', DATE_FORMAT(invoice_date, '%Y%m%d'), '/', id)</sql>
+		<addNotNullConstraint tableName="msedcl_invoices" columnName="invoice_no"
+			columnDataType="VARCHAR(160)"/>
+		<addUniqueConstraint tableName="msedcl_invoices" columnNames="invoice_no"
+			constraintName="uk_msedcl_invoice_no"/>
+		<addColumn tableName="customer_msedcl_details">
+			<column name="last_invoice_no" type="VARCHAR(160)"/>
+		</addColumn>
+		<sql>UPDATE customer_msedcl_details d JOIN (SELECT msedcl_detail_id, invoice_no, ROW_NUMBER() OVER (PARTITION BY msedcl_detail_id ORDER BY billing_date DESC, id DESC) AS row_num FROM msedcl_invoices) i ON i.msedcl_detail_id = d.id AND i.row_num = 1 SET d.last_invoice_no = i.invoice_no</sql>
+	</changeSet>
+</databaseChangeLog>

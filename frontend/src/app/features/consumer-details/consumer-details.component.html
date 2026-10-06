@@ -1,0 +1,22 @@
+<section class="feature-page">
+	<header class="feature-heading">
+		<div><p class="eyebrow">ADITYA SOLAR / DIRECTORY</p><h1>Consumer Details</h1><p>MSEDCL consumer accounts available to your role.</p></div>
+	</header>
+	<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading consumer details…</span></div>
+	<section class="directory-panel" *ngIf="!loading">
+		<div class="directory-heading"><strong>CONSUMER DIRECTORY</strong><span>{{ rows.length }} accounts</span></div>
+		<p-table [value]="rows" [rowHover]="true" responsiveLayout="scroll" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '64rem' }">
+			<ng-template pTemplate="caption">
+				<div class="consumer-filters">
+					<label>Name<input pInputText [(ngModel)]="nameFilter" aria-label="Filter by consumer name" (keydown.enter)="applyFilters()"></label>
+					<label>Mobile number<input pInputText type="tel" [(ngModel)]="mobileNoFilter" aria-label="Filter by mobile number" (keydown.enter)="applyFilters()"></label>
+					<label>Consumer number<input pInputText [(ngModel)]="consumerNoFilter" aria-label="Filter by consumer number" (keydown.enter)="applyFilters()"></label>
+					<div class="filter-actions"><p-button label="Filter" icon="pi pi-filter" (onClick)="applyFilters()" [loading]="loading"></p-button><p-button label="Clear" severity="secondary" [outlined]="true" (onClick)="clearFilters()" [disabled]="loading"></p-button></div>
+				</div>
+			</ng-template>
+			<ng-template pTemplate="header"><tr><th>Billing unit</th><th>Consumer name</th><th>Mobile</th><th>Consumer number</th><th>Rate / unit</th><th>Charge type</th><th>Branch</th></tr></ng-template>
+			<ng-template pTemplate="body" let-detail><tr><td>{{ detail.billingUnit }}</td><td>{{ detail.name }}</td><td>{{ detail.mobileNo }}</td><td>{{ detail.consumerNo }}</td><td>{{ detail.ratePerUnit | number:'1.2-4' }}</td><td>{{ detail.chargeType === 'ONLY_SOLAR_GENERATION' ? 'Only Solar generation' : 'Solar + MSEB bill amount' }}</td><td>{{ detail.branchName }}</td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="7" class="empty-cell">No consumer details are available.</td></tr></ng-template>
+		</p-table>
+	</section>
+</section>

@@ -5,6 +5,7 @@ import com.aditya.solarmanagement.models.EmployeeRole;
 
 public record EmployeeResponse(
 		Long id,
+		Long companyId,
 		Long branchId,
 		String branchName,
 		String firstName,

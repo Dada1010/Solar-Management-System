@@ -12,6 +12,8 @@
       <a routerLink="/branches" routerLinkActive="current"><i class="pi pi-map-marker"></i><span>Branch</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/employees" routerLinkActive="current"><i class="pi pi-users"></i><span>Employee</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      <a routerLink="/consumer-details" routerLinkActive="current"><i class="pi pi-bolt"></i><span>Consumer Details</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      <a routerLink="/invoices" routerLinkActive="current"><i class="pi pi-file-edit"></i><span>Invoices</span><i class="pi pi-angle-right nav-arrow"></i></a>
     </nav>
     <div class="sidebar-bottom"><span class="online-dot"></span><span>Workspace ready<small>Secure session active</small></span></div>
   </aside>
@@ -27,7 +29,7 @@
         <button class="profile-trigger" type="button" (click)="userMenu.toggle($event)" aria-label="User profile menu">
           <p-avatar [label]="userInitials" shape="circle"></p-avatar><i class="pi pi-angle-down"></i>
         </button>
-        <p-menu #userMenu [model]="profileMenu" [popup]="true"></p-menu>
+        <p-menu #userMenu [model]="profileMenu" [popup]="true" appendTo="body"></p-menu>
       </div>
     </header>
 

@@ -49,7 +49,9 @@ export class WorkspaceShellComponent implements OnDestroy {
       companies: 'Companies',
       branches: 'Branches',
       employees: 'Employees',
-      customers: 'Customers'
+      customers: 'Customers',
+      'consumer-details': 'Consumer Details',
+      invoices: 'Invoices'
     };
     this.activeTitle = titles[path] ?? 'Companies';
   }

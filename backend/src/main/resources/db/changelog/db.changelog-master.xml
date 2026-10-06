@@ -10,4 +10,12 @@
 	<include file="db/changelog/changes/005-create-customer-msedcl-details.xml"/>
 	<include file="db/changelog/changes/006-add-msedcl-charge-type.xml"/>
 	<include file="db/changelog/changes/007-default-msedcl-charge-type.xml"/>
+	<include file="db/changelog/changes/008-create-effective-rates.xml"/>
+	<include file="db/changelog/changes/009-create-msedcl-invoices.xml"/>
+	<include file="db/changelog/changes/010-add-invoice-rate-source.xml"/>
+	<include file="db/changelog/changes/011-add-solar-bill-units.xml"/>
+	<include file="db/changelog/changes/012-add-invoice-numbers.xml"/>
+	<include file="db/changelog/changes/013-add-mseb-bill-attachments.xml"/>
+	<include file="db/changelog/changes/014-add-invoice-owner-ids.xml"/>
+	<include file="db/changelog/changes/015-create-invoice-payments.xml"/>
 </databaseChangeLog>

@@ -41,7 +41,9 @@ import com.aditya.solarmanagement.repo.EffectiveRateRepository;
 import com.aditya.solarmanagement.repo.MsedclDetailRepository;
 import com.aditya.solarmanagement.repo.specification.BranchSpecifications;
 import com.aditya.solarmanagement.repo.specification.EmployeeSpecifications;
+import com.aditya.solarmanagement.repo.specification.MsedclDetailSpecifications;
 import com.aditya.solarmanagement.service.ManagementService;
+import com.aditya.solarmanagement.service.InvoiceService;
 
 @Service
 @Transactional(readOnly = true)
@@ -51,15 +53,18 @@ public class ManagementServiceImpl implements ManagementService {
 	private final BranchRepository branches;
 	private final EmployeeRepository employees;
 	private final MsedclDetailRepository msedclDetails;
+	private final InvoiceService invoiceService;
 	private final EffectiveRateRepository effectiveRates;
 	private final PasswordEncoder passwordEncoder;
 
 	public ManagementServiceImpl(CompanyRepository companies, BranchRepository branches, EmployeeRepository employees,
-			MsedclDetailRepository msedclDetails, EffectiveRateRepository effectiveRates, PasswordEncoder passwordEncoder) {
+			MsedclDetailRepository msedclDetails, InvoiceService invoiceService,
+			EffectiveRateRepository effectiveRates, PasswordEncoder passwordEncoder) {
 		this.companies = companies;
 		this.branches = branches;
 		this.employees = employees;
 		this.msedclDetails = msedclDetails;
+		this.invoiceService = invoiceService;
 		this.effectiveRates = effectiveRates;
 		this.passwordEncoder = passwordEncoder;
 	}
@@ -243,10 +248,42 @@ public class ManagementServiceImpl implements ManagementService {
 	}
 
 	@Override
-	public List<MsedclDetailResponse> msedclDetails(Long customerId) {
-		logger.debug("Listing MSEDCL details for customer id={}", customerId);
+	public List<MsedclDetailResponse> consumerDetails(String requestingEmail, String name, String mobileNo,
+			String consumerNo) {
+		Employee requester = employeeByEmail(requestingEmail);
+		Long branchId = requester.getRole() == EmployeeRole.USER ? requester.getBranch().getId() : null;
+		Long customerId = requester.getRole() == EmployeeRole.CUSTOMER ? requester.getId() : null;
+		List<MsedclDetail> details = findConsumerDetails(branchId, customerId, name, mobileNo, consumerNo);
+		logger.debug("Listed consumer details requesterId={} role={} count={}", requester.getId(), requester.getRole(),
+				details.size());
+		return details.stream().map(this::msedclDetailResponse).toList();
+	}
+
+	@Override
+	public List<MsedclDetailResponse> msedclDetails(Long customerId, String requestingEmail, String name,
+			String mobileNo, String consumerNo) {
+		Employee requester = employeeByEmail(requestingEmail);
 		Employee customer = customer(customerId);
-		return customer.getMsedclDetails().stream().map(this::msedclDetailResponse).toList();
+		boolean allowed = switch (requester.getRole()) {
+			case ADMIN -> true;
+			case USER -> requester.getBranch().getId().equals(customer.getBranch().getId());
+			case CUSTOMER -> requester.getId().equals(customer.getId());
+		};
+		if (!allowed) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view this customer's details");
+		}
+		logger.debug("Listing MSEDCL details customerId={} requesterId={}", customerId, requester.getId());
+		return findConsumerDetails(null, customerId, name, mobileNo, consumerNo).stream()
+				.map(this::msedclDetailResponse).toList();
+	}
+
+	private List<MsedclDetail> findConsumerDetails(Long branchId, Long customerId, String name, String mobileNo,
+			String consumerNo) {
+		return msedclDetails.findAll(MsedclDetailSpecifications.byBranchId(branchId)
+				.and(MsedclDetailSpecifications.byCustomerId(customerId))
+				.and(MsedclDetailSpecifications.byName(name))
+				.and(MsedclDetailSpecifications.byMobileNo(mobileNo))
+				.and(MsedclDetailSpecifications.byConsumerNo(consumerNo)), Sort.by(Sort.Direction.ASC, "id"));
 	}
 
 	@Override
@@ -291,6 +328,9 @@ public class ManagementServiceImpl implements ManagementService {
 				.filter(item -> item.getId().equals(detailId))
 				.findFirst()
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MSEDCL detail not found"));
+		if (invoiceService.hasInvoicesForDetail(detailId)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "MSEDCL details with invoice history cannot be deleted");
+		}
 		customer.removeMsedclDetail(detail);
 		logger.info("Removed MSEDCL detail id={} from customer id={}", detailId, customerId);
 	}
@@ -304,9 +344,16 @@ public class ManagementServiceImpl implements ManagementService {
 		return employee;
 	}
 
+	private Employee employeeByEmail(String emailAddress) {
+		return employees.findByEmailAddressIgnoreCase(emailAddress)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account not found"));
+	}
+
 	private MsedclDetailResponse msedclDetailResponse(MsedclDetail detail) {
-		return new MsedclDetailResponse(detail.getId(), detail.getBillingUnit(), detail.getName(), detail.getMobileNo(),
-				detail.getConsumerNo(), detail.getRatePerUnit(), detail.getChargeType());
+		Branch branch = detail.getCustomer().getBranch();
+		return new MsedclDetailResponse(detail.getId(), branch.getCompany().getId(), branch.getId(), branch.getName(),
+				detail.getBillingUnit(), detail.getName(), detail.getMobileNo(), detail.getConsumerNo(),
+				detail.getRatePerUnit(), detail.getLastInvoiceNo(), detail.getChargeType());
 	}
 
 	@Override
@@ -416,8 +463,8 @@ public class ManagementServiceImpl implements ManagementService {
 
 	private EmployeeResponse employeeResponse(Employee employee) {
 		Branch branch = employee.getBranch();
-		return new EmployeeResponse(employee.getId(), branch.getId(), branch.getName(), employee.getFirstName(),
-				employee.getLastName(), employee.getAddress(), employee.getMobileNo(), employee.getEmailAddress(),
+		return new EmployeeResponse(employee.getId(), branch.getCompany().getId(), branch.getId(), branch.getName(),
+				employee.getFirstName(), employee.getLastName(), employee.getAddress(), employee.getMobileNo(), employee.getEmailAddress(),
 				employee.getEmployeeType(), employee.getRole(), employee.mustChangePassword());
 	}
 

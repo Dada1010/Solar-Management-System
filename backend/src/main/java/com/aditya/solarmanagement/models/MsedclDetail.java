@@ -43,6 +43,9 @@ public class MsedclDetail {
 	@Column(name = "rate_per_unit", nullable = false, precision = 12, scale = 4)
 	private BigDecimal ratePerUnit;
 
+	@Column(name = "last_invoice_no", length = 160)
+	private String lastInvoiceNo;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "charge_type", nullable = false, length = 40)
 	private MsedclChargeType chargeType = MsedclChargeType.ONLY_SOLAR_GENERATION;
@@ -73,5 +76,9 @@ public class MsedclDetail {
 
 	public void setCustomer(Employee customer) {
 		this.customer = customer;
+	}
+
+	public void updateLastInvoiceNo(String invoiceNo) {
+		this.lastInvoiceNo = invoiceNo;
 	}
 }

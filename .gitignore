@@ -16,3 +16,6 @@ pnpm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Uploaded invoice attachments
+backend/uploads/

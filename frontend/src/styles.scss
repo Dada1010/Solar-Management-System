@@ -29,3 +29,11 @@ button, input, select { font: inherit; }
 button { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #86ad91; outline-offset: 2px; }
 ::selection { background: #d8eadc; color: var(--forest-deep); }
+
+@media print {
+	@page { size: A4; margin: 14mm; }
+	body * { visibility: hidden !important; }
+	.invoice-print, .invoice-print * { visibility: visible !important; }
+	.invoice-print { position: absolute; inset: 0; display: block !important; width: 100%; padding: 0; background: #fff !important; color: #111 !important; font-family: Arial, sans-serif; }
+	.invoice-print * { box-shadow: none !important; }
+}

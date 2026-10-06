@@ -6,6 +6,8 @@ import { FirstLoginComponent } from './auth/first-login/first-login.component';
 import { LoginComponent } from './auth/login/login.component';
 import { BranchComponent } from './features/branch/branch.component';
 import { CompanyComponent } from './features/company/company.component';
+import { ConsumerDetailsComponent } from './features/consumer-details/consumer-details.component';
+import { InvoiceComponent } from './features/invoice/invoice.component';
 import { PeopleComponent } from './features/people/people.component';
 import { WorkspaceShellComponent } from './layout/workspace-shell/workspace-shell.component';
 
@@ -21,6 +23,8 @@ const routes: Routes = [
       { path: 'branches', component: BranchComponent },
       { path: 'employees', component: PeopleComponent, data: { employeeType: 'COMPANY_EMPLOYEE' } },
       { path: 'customers', component: PeopleComponent, data: { employeeType: 'CUSTOMER' } },
+      { path: 'consumer-details', component: ConsumerDetailsComponent },
+      { path: 'invoices', component: InvoiceComponent },
       { path: '', pathMatch: 'full', redirectTo: 'companies' }
     ]
   },
