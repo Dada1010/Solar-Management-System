@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+@import 'primeicons/primeicons.css';
+
+:root {
+	color-scheme: light;
+	--ink: #203a33;
+	--muted: #76857e;
+	--paper: #f4f6f2;
+	--forest: #173d36;
+	--forest-deep: #10251b;
+	--line: #e2e8e1;
+	--sans: 'DM Sans', 'Trebuchet MS', sans-serif;
+	--serif: 'DM Serif Display', Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; margin: 0; }
+
+body {
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 14px;
+	-webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font: inherit; }
+button { color: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #86ad91; outline-offset: 2px; }
+::selection { background: #d8eadc; color: var(--forest-deep); }

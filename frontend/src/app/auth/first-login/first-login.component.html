@@ -1,0 +1,32 @@
+<main class="auth-page password-page">
+  <section class="auth-visual password-visual">
+    <a class="brand-lockup" routerLink="/login"><span class="brand-symbol">A</span><span>ADITYA SOLAR<small>MANAGEMENT SYSTEM</small></span></a>
+    <div class="visual-copy">
+      <p class="eyebrow">ONE QUICK SECURITY STEP</p>
+      <h1>Make this<br>workspace<br><em>yours.</em></h1>
+      <p>Set a private password before you start working with your solar network.</p>
+    </div>
+    <div class="solar-disc" aria-hidden="true"><span></span><i></i></div>
+    <div class="visual-coordinate">ACCOUNT SECURITY <span>02 / 04</span></div>
+  </section>
+  <section class="auth-form-side">
+    <div class="auth-form-wrap">
+      <a class="mobile-brand" routerLink="/login"><span class="brand-symbol">A</span> ADITYA SOLAR</a>
+      <p class="eyebrow">FIRST-TIME SIGN IN</p>
+      <h2>Update your password</h2>
+      <p class="auth-description">Your temporary password must be replaced before accessing the workspace.</p>
+      <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+        <label for="currentPassword">Temporary password</label>
+        <p-password inputId="currentPassword" formControlName="currentPassword" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password"></p-password>
+        <label for="newPassword">New password</label>
+        <p-password inputId="newPassword" formControlName="newPassword" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="new-password"></p-password>
+        <small class="field-error" *ngIf="form.controls.newPassword.touched && form.controls.newPassword.invalid">Use at least 8 characters.</small>
+        <label for="confirmPassword">Confirm new password</label>
+        <p-password inputId="confirmPassword" formControlName="confirmPassword" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="new-password"></p-password>
+        <p-button type="submit" label="Save password" icon="pi pi-lock" iconPos="right" [loading]="loading" [disabled]="form.invalid"></p-button>
+      </form>
+      <p class="secure-note"><i class="pi pi-info-circle"></i> Your password is sent securely and is never saved in browser storage.</p>
+    </div>
+    <footer class="auth-footer"><span>© 2026 Aditya Solar</span><span>First sign-in setup</span></footer>
+  </section>
+</main>

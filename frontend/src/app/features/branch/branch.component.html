@@ -1,0 +1,22 @@
+<section class="feature-page">
+	<header class="feature-heading"><div><p class="eyebrow">ADITYA SOLAR / LOCATIONS</p><h1>Branches</h1><p>Manage branches under their parent company.</p></div><p-button label="Add branch" icon="pi pi-plus" (onClick)="create()" [disabled]="loading"></p-button></header>
+	<div class="directory-tools"><label class="filter-control"><i class="pi pi-search"></i><input pInputText [(ngModel)]="nameFilter" placeholder="Filter by branch name" aria-label="Filter by branch name" (keydown.enter)="applyFilter()"></label><p-button label="Filter" icon="pi pi-filter" severity="secondary" [outlined]="true" (onClick)="applyFilter()"></p-button><p-button *ngIf="nameFilter" icon="pi pi-times" severity="secondary" [text]="true" aria-label="Clear filter" (onClick)="clearFilter()"></p-button></div>
+	<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading branches…</span></div>
+	<section class="directory-panel" *ngIf="!loading"><div class="directory-heading"><strong>BRANCH DIRECTORY</strong><span>{{ totalRecords }} branches</span></div>
+		<p-table [value]="rows" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '44rem' }">
+			<ng-template pTemplate="header"><tr><th>Branch</th><th>Company</th><th>Address</th><th>Phone</th><th class="action-cell">Action</th></tr></ng-template>
+			<ng-template pTemplate="body" let-branch><tr><td>{{ branch.name }}</td><td>{{ branch.companyName }}</td><td>{{ branch.address || '—' }}</td><td>{{ branch.mobileNo || '—' }}</td><td class="action-cell"><p-button icon="pi pi-pencil" [text]="true" severity="secondary" aria-label="Edit branch" (onClick)="edit(branch)"></p-button></td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="5" class="empty-cell">No branches match this filter.</td></tr></ng-template>
+		</p-table>
+		<p-paginator [first]="page * size" [rows]="size" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50]" (onPageChange)="changePage($event)"></p-paginator>
+	</section>
+	<p-dialog [(visible)]="dialogVisible" [header]="editingId === null ? 'Add branch' : 'Update branch'" [modal]="true" [draggable]="false" [style]="{ width: 'min(40rem, 94vw)' }">
+		<form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+			<label class="wide">Branch name<input pInputText formControlName="name"></label>
+			<label class="wide" *ngIf="auth.user?.companyId; else companySelector">Company<input pInputText [value]="selectedCompanyName" readonly><input type="hidden" formControlName="companyId"></label>
+			<ng-template #companySelector><label class="wide">Company<select formControlName="companyId"><option [ngValue]="null" disabled>Select company</option><option *ngFor="let company of companies" [ngValue]="company.id">{{ company.name }}</option></select></label></ng-template>
+			<label>Email address<input pInputText type="email" formControlName="emailAddress"></label><label>Mobile number<input pInputText type="tel" formControlName="mobileNo"></label><label class="wide">Address<input pInputText formControlName="address"></label>
+			<div class="form-actions wide"><p-button label="Cancel" severity="secondary" [outlined]="true" type="button" (onClick)="dialogVisible = false"></p-button><p-button label="Save branch" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button></div>
+		</form>
+	</p-dialog>
+</section>

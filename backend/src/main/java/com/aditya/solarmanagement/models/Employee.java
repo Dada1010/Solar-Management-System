@@ -1,0 +1,94 @@
+package com.aditya.solarmanagement.models;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "employees")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Employee {
+	public enum EmployeeType { CUSTOMER, COMPANY_EMPLOYEE }
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@Column(nullable = false, length = 100)
+	private String firstName;
+
+	@Column(nullable = false, length = 100)
+	private String lastName;
+
+	@Column(length = 255)
+	private String address;
+
+	@Column(length = 40)
+	private String mobileNo;
+
+	@Column(nullable = false, unique = true, length = 160)
+	private String emailAddress;
+
+	@Column(nullable = false, length = 100)
+	@Setter
+	private String passwordHash;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 30)
+	private EmployeeType employeeType;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 20)
+	private EmployeeRole role = EmployeeRole.USER;
+
+	@Column(nullable = false)
+	@Setter
+	private boolean mustChangePassword = true;
+
+	@Column(nullable = false)
+	private boolean active = true;
+
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
+
+	public Employee(String firstName, String lastName, String address, String mobileNo, String emailAddress,
+			String passwordHash, EmployeeType employeeType, EmployeeRole role, Branch branch) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.address = address;
+		this.mobileNo = mobileNo;
+		this.emailAddress = emailAddress;
+		this.passwordHash = passwordHash;
+		this.employeeType = employeeType;
+		this.role = role;
+		this.branch = branch;
+	}
+
+	public void updateDetails(String firstName, String lastName, String address, String mobileNo,
+			String emailAddress, EmployeeType employeeType, EmployeeRole role, Branch branch) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.address = address;
+		this.mobileNo = mobileNo;
+		this.emailAddress = emailAddress;
+		this.employeeType = employeeType;
+		this.role = role;
+		this.branch = branch;
+	}
+
+	public boolean mustChangePassword() { return mustChangePassword; }
+}

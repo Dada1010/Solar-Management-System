@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="001-create-companies" author="aditya">
+		<preConditions onFail="MARK_RAN">
+			<not><tableExists tableName="companies"/></not>
+		</preConditions>
+		<createTable tableName="companies">
+			<column name="id" type="BIGINT" autoIncrement="true">
+				<constraints primaryKey="true" primaryKeyName="pk_companies" nullable="false"/>
+			</column>
+			<column name="name" type="VARCHAR(160)">
+				<constraints nullable="false" unique="true" uniqueConstraintName="uk_companies_name"/>
+			</column>
+			<column name="industry" type="VARCHAR(120)"/>
+			<column name="address" type="VARCHAR(255)"/>
+			<column name="mobile_no" type="VARCHAR(40)"/>
+			<column name="email_address" type="VARCHAR(160)"/>
+		</createTable>
+	</changeSet>
+</databaseChangeLog>

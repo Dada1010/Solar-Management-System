@@ -1,0 +1,25 @@
+<section class="feature-page">
+  <header class="feature-heading"><div><p class="eyebrow">ADITYA SOLAR / PEOPLE</p><h1>{{ title }}</h1><p>Manage {{ title.toLowerCase() }} across your branch network.</p></div><p-button [label]="'Add ' + (employeeType === 'CUSTOMER' ? 'customer' : 'employee')" icon="pi pi-plus" (onClick)="create()" [disabled]="loading"></p-button></header>
+  <div class="people-tools"><label class="filter-control"><i class="pi pi-search"></i><input pInputText [(ngModel)]="nameFilter" [placeholder]="filterLabel" aria-label="Filter people" (keydown.enter)="applyFilter()"></label><p-button label="Filter" icon="pi pi-filter" severity="secondary" [outlined]="true" (onClick)="applyFilter()"></p-button><p-button *ngIf="nameFilter" icon="pi pi-times" severity="secondary" [text]="true" aria-label="Clear filter" (onClick)="clearFilter()"></p-button></div>
+  <div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading {{ title.toLowerCase() }}…</span></div>
+  <section class="directory-panel" *ngIf="!loading"><div class="directory-heading"><strong>{{ title.toUpperCase() }} DIRECTORY</strong><span>{{ totalRecords }} records</span></div>
+    <p-table [value]="rows" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '48rem' }">
+      <ng-template pTemplate="header"><tr><th>First name</th><th>Last name</th><th>Email</th><th>Branch</th><th>Role</th><th class="action-cell">Action</th></tr></ng-template>
+      <ng-template pTemplate="body" let-person><tr><td>{{ person.firstName }}</td><td>{{ person.lastName }}</td><td>{{ person.emailAddress }}</td><td>{{ person.branchName }}</td><td>{{ person.role | lowercase }}</td><td class="action-cell"><p-button icon="pi pi-pencil" [text]="true" severity="secondary" aria-label="Edit person" (onClick)="edit(person)"></p-button></td></tr></ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="6" class="empty-cell">No {{ title.toLowerCase() }} match this filter.</td></tr></ng-template>
+    </p-table>
+    <p-paginator [first]="page * size" [rows]="size" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50]" (onPageChange)="changePage($event)"></p-paginator>
+  </section>
+  <p-dialog [(visible)]="dialogVisible" [header]="(editingId === null ? 'Add ' : 'Update ') + (employeeType === 'CUSTOMER' ? 'customer' : 'employee')" [modal]="true" [draggable]="false" [style]="{ width: 'min(42rem, 94vw)' }">
+    <form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+      <label>First name<input pInputText formControlName="firstName" autocomplete="given-name"></label>
+      <label>Last name<input pInputText formControlName="lastName" autocomplete="family-name"></label>
+      <label class="wide">Email address<input pInputText type="email" formControlName="emailAddress" autocomplete="email"></label>
+      <label>Mobile number<input pInputText type="tel" formControlName="mobileNo" autocomplete="tel"></label>
+      <label>Branch<select formControlName="branchId"><option [ngValue]="null" disabled>Select branch</option><option *ngFor="let branch of branches" [ngValue]="branch.id">{{ branch.name }} · {{ branch.companyName }}</option></select></label>
+      <label class="wide">Address<input pInputText formControlName="address" autocomplete="street-address"></label>
+      <p class="temporary-password wide" *ngIf="editingId === null">New accounts start with temporary password <strong>123456</strong> and must change it after sign-in.</p>
+      <div class="form-actions wide"><p-button label="Cancel" severity="secondary" [outlined]="true" type="button" (onClick)="dialogVisible = false"></p-button><p-button [label]="'Save ' + (employeeType === 'CUSTOMER' ? 'customer' : 'employee')" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button></div>
+    </form>
+  </p-dialog>
+</section>

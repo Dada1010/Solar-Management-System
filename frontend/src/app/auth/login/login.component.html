@@ -1,0 +1,31 @@
+<main class="auth-page login-page">
+  <section class="auth-visual">
+    <a class="brand-lockup" routerLink="/login"><span class="brand-symbol">A</span><span>ADITYA SOLAR<small>MANAGEMENT SYSTEM</small></span></a>
+    <div class="visual-copy">
+      <p class="eyebrow">ENERGY, IN GOOD HANDS</p>
+      <h1>Bring every<br>solar team<br><em>into focus.</em></h1>
+      <p>One workspace for your companies, branches, employees, and customers.</p>
+    </div>
+    <div class="solar-disc" aria-hidden="true"><span></span><i></i></div>
+    <div class="visual-coordinate">OPERATIONS PLATFORM <span>01 / 04</span></div>
+  </section>
+  <section class="auth-form-side">
+    <div class="auth-form-wrap">
+      <a class="mobile-brand" routerLink="/login"><span class="brand-symbol">A</span> ADITYA SOLAR</a>
+      <p class="eyebrow">WELCOME BACK</p>
+      <h2>Sign in to your workspace</h2>
+      <p class="auth-description">Use your work email and password to continue.</p>
+      <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+        <label for="emailAddress">Email address</label>
+        <input pInputText id="emailAddress" type="email" formControlName="emailAddress" autocomplete="username" placeholder="you@company.com">
+        <small class="field-error" *ngIf="form.controls.emailAddress.touched && form.controls.emailAddress.invalid">Enter a valid email address.</small>
+        <label for="password">Password</label>
+        <p-password inputId="password" formControlName="password" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="current-password" placeholder="Enter your password"></p-password>
+        <button class="forgot-link" type="button" (click)="showPasswordHelp()">Forgot password? Contact admin</button>
+        <p-button type="submit" label="Sign in" icon="pi pi-arrow-right" iconPos="right" [loading]="loading" [disabled]="form.invalid"></p-button>
+      </form>
+      <p class="secure-note"><i class="pi pi-shield"></i> Your account is protected with encrypted authentication.</p>
+    </div>
+    <footer class="auth-footer"><span>© 2026 Aditya Solar</span><a routerLink="/login">Support</a></footer>
+  </section>
+</main>

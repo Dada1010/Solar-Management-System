@@ -1,0 +1,19 @@
+<section class="feature-page">
+  <header class="feature-heading"><div><p class="eyebrow">ADITYA SOLAR / DIRECTORY</p><h1>Companies</h1><p>Manage the organizations in your solar network.</p></div><p-button label="Add company" icon="pi pi-plus" (onClick)="create()" [disabled]="loading"></p-button></header>
+  <div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading companies…</span></div>
+  <section class="directory-panel" *ngIf="!loading"><div class="directory-heading"><strong>COMPANY DIRECTORY</strong><span>{{ totalRecords }} companies</span></div>
+    <p-table [value]="rows" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '42rem' }">
+      <ng-template pTemplate="header"><tr><th>Company</th><th>Industry</th><th>Branches</th><th>Email</th><th class="action-cell">Action</th></tr></ng-template>
+      <ng-template pTemplate="body" let-company><tr><td>{{ company.name }}</td><td>{{ company.industry || '—' }}</td><td>{{ company.branchCount }}</td><td>{{ company.emailAddress || '—' }}</td><td class="action-cell"><p-button icon="pi pi-pencil" [text]="true" severity="secondary" aria-label="Edit company" (onClick)="edit(company)"></p-button></td></tr></ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="5" class="empty-cell">No companies found.</td></tr></ng-template>
+    </p-table>
+    <p-paginator [first]="page * size" [rows]="size" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50]" (onPageChange)="changePage($event)"></p-paginator>
+  </section>
+  <p-dialog [(visible)]="dialogVisible" [header]="editingId === null ? 'Add company' : 'Update company'" [modal]="true" [draggable]="false" [style]="{ width: 'min(40rem, 94vw)' }">
+    <form [formGroup]="form" (ngSubmit)="save()" class="form-grid">
+      <label class="wide">Company name<input pInputText formControlName="name"></label><label>Industry<input pInputText formControlName="industry"></label>
+      <label>Email address<input pInputText type="email" formControlName="emailAddress"></label><label>Mobile number<input pInputText type="tel" formControlName="mobileNo"></label><label>Address<input pInputText formControlName="address"></label>
+      <div class="form-actions wide"><p-button label="Cancel" severity="secondary" [outlined]="true" type="button" (onClick)="dialogVisible = false"></p-button><p-button label="Save company" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button></div>
+    </form>
+  </p-dialog>
+</section>

@@ -1,0 +1,37 @@
+<div class="workspace" [class.nav-open]="navOpen">
+  <button class="nav-scrim" type="button" aria-label="Close navigation" (click)="navOpen = false"></button>
+  <aside class="sidebar">
+    <a class="sidebar-brand" routerLink="/companies" aria-label="Aditya Solar home">
+      <span class="brand-symbol">A</span><span>ADITYA SOLAR<small>MANAGEMENT SYSTEM</small></span>
+    </a>
+    <div class="sidebar-caption">WORKSPACE</div>
+    <div class="org-switcher"><span class="org-mark">A</span><span>Aditya Solar Group<small>Organization</small></span><i class="pi pi-angle-down"></i></div>
+    <nav class="side-nav" aria-label="Management navigation">
+      <span class="nav-section-label">MANAGE</span>
+      <a routerLink="/companies" routerLinkActive="current"><i class="pi pi-building"></i><span>Company</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      <a routerLink="/branches" routerLinkActive="current"><i class="pi pi-map-marker"></i><span>Branch</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      <a routerLink="/employees" routerLinkActive="current"><i class="pi pi-users"></i><span>Employee</span><i class="pi pi-angle-right nav-arrow"></i></a>
+      <a routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer</span><i class="pi pi-angle-right nav-arrow"></i></a>
+    </nav>
+    <div class="sidebar-bottom"><span class="online-dot"></span><span>Workspace ready<small>Secure session active</small></span></div>
+  </aside>
+
+  <section class="workspace-main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-nav-toggle" type="button" aria-label="Open navigation" (click)="navOpen = true"><i class="pi pi-bars"></i></button>
+        <div class="breadcrumb"><span>Workspace</span><i class="pi pi-angle-right"></i><strong>{{ activeTitle }}</strong></div>
+      </div>
+      <div class="topbar-right">
+        <span class="signed-in-name">{{ auth.user?.name }}</span>
+        <button class="profile-trigger" type="button" (click)="userMenu.toggle($event)" aria-label="User profile menu">
+          <p-avatar [label]="userInitials" shape="circle"></p-avatar><i class="pi pi-angle-down"></i>
+        </button>
+        <p-menu #userMenu [model]="profileMenu" [popup]="true"></p-menu>
+      </div>
+    </header>
+
+    <main class="page-area"><router-outlet></router-outlet></main>
+    <footer class="app-footer"><span>© 2026 Aditya Solar</span><span>People, branches, and companies in one place.</span><span>Secure workspace</span></footer>
+  </section>
+</div>

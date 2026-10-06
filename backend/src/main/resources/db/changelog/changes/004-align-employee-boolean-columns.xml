@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="004-align-employee-boolean-columns" author="aditya" dbms="mysql">
+		<modifyDataType tableName="employees" columnName="active" newDataType="BIT"/>
+		<modifyDataType tableName="employees" columnName="must_change_password" newDataType="BIT"/>
+		<rollback>
+			<modifyDataType tableName="employees" columnName="active" newDataType="TINYINT(1)"/>
+			<modifyDataType tableName="employees" columnName="must_change_password" newDataType="TINYINT(1)"/>
+		</rollback>
+	</changeSet>
+</databaseChangeLog>

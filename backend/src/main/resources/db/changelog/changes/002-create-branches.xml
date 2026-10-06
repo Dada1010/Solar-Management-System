@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="002-create-branches" author="aditya">
+		<preConditions onFail="MARK_RAN">
+			<not><tableExists tableName="branches"/></not>
+		</preConditions>
+		<createTable tableName="branches">
+			<column name="id" type="BIGINT" autoIncrement="true">
+				<constraints primaryKey="true" primaryKeyName="pk_branches" nullable="false"/>
+			</column>
+			<column name="name" type="VARCHAR(160)">
+				<constraints nullable="false"/>
+			</column>
+			<column name="address" type="VARCHAR(255)"/>
+			<column name="mobile_no" type="VARCHAR(40)"/>
+			<column name="email_address" type="VARCHAR(160)"/>
+			<column name="company_id" type="BIGINT">
+				<constraints nullable="false" foreignKeyName="fk_branches_company" references="companies(id)"/>
+			</column>
+		</createTable>
+		<addUniqueConstraint tableName="branches" columnNames="company_id,name"
+				constraintName="uk_branch_company_name"/>
+	</changeSet>
+</databaseChangeLog>
