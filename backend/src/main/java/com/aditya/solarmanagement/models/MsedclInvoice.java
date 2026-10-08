@@ -171,6 +171,9 @@ public class MsedclInvoice {
 	@Column(name = "consumer_savings_amount", precision = 14, scale = 2)
 	private BigDecimal consumerSavingsAmount;
 
+	@Column(name = "savings_breakdown", length = 4000)
+	private String savingsBreakdown;
+
 	@Column(name = "mseb_bill_storage_name", length = 100)
 	private String msebBillStorageName;
 
@@ -232,11 +235,12 @@ public class MsedclInvoice {
 	}
 
 	public void applySavings(BigDecimal totalConsumptionUnits, BigDecimal withoutSolarBillAmount,
-			BigDecimal withSolarBillAmount, BigDecimal consumerSavingsAmount) {
+			BigDecimal withSolarBillAmount, BigDecimal consumerSavingsAmount, String savingsBreakdown) {
 		this.totalConsumptionUnits = totalConsumptionUnits;
 		this.withoutSolarBillAmount = withoutSolarBillAmount;
 		this.withSolarBillAmount = withSolarBillAmount;
 		this.consumerSavingsAmount = consumerSavingsAmount;
+		this.savingsBreakdown = savingsBreakdown;
 	}
 
 	public void assignInvoiceNo(String invoiceNo) {

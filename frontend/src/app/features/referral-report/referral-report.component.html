@@ -1,0 +1,22 @@
+<section class="feature-page">
+	<header class="feature-heading">
+		<div><p class="eyebrow">ADITYA SOLAR / REFERRALS</p><h1>Referral incentive report</h1><p>Monthly incentive totals from active invoices, grouped by referral partner.</p></div>
+		<p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="load()" [loading]="loading"></p-button>
+	</header>
+	<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading referral report…</span></div>
+	<ng-container *ngIf="!loading">
+		<section class="report-metrics" aria-label="Referral report summary">
+			<article><span>Accrued incentives</span><strong>{{ incentiveTotal | currency:'INR':'symbol':'1.2-2' }}</strong></article>
+			<article><span>Solar amount</span><strong>{{ solarTotal | currency:'INR':'symbol':'1.2-2' }}</strong></article>
+			<article><span>Invoices</span><strong>{{ invoiceTotal | number }}</strong></article>
+		</section>
+		<section class="directory-panel">
+			<div class="report-toolbar"><strong>MONTHLY REFERRAL TOTALS</strong><label>Year<select [(ngModel)]="selectedYear"><option value="">All years</option><option *ngFor="let year of years" [value]="year">{{ year }}</option></select></label></div>
+			<p-table appResponsiveTable [value]="filteredRows" [rowHover]="true" responsiveLayout="scroll" [paginator]="filteredRows.length > 12" [rows]="12" [rowsPerPageOptions]="[12, 24, 48]" [tableStyle]="{ 'min-width': '42rem' }">
+				<ng-template pTemplate="header"><tr><th>Billing month</th><th>Referral</th><th>Invoices</th><th>Solar amount</th><th>Incentive</th></tr></ng-template>
+				<ng-template pTemplate="body" let-row><tr><td><span class="p-datatable-column-title">Billing month</span>{{ monthLabel(row.month) }}</td><td><span class="p-datatable-column-title">Referral</span>{{ row.referralName }}</td><td><span class="p-datatable-column-title">Invoices</span>{{ row.invoiceCount | number }}</td><td><span class="p-datatable-column-title">Solar amount</span>{{ row.solarAmount | currency:'INR':'symbol':'1.2-2' }}</td><td class="incentive-cell"><span class="p-datatable-column-title">Incentive</span>{{ row.incentiveAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr></ng-template>
+				<ng-template pTemplate="emptymessage"><tr><td colspan="5" class="empty-cell">No referral incentives found for this period.</td></tr></ng-template>
+			</p-table>
+		</section>
+	</ng-container>
+</section>

@@ -31,4 +31,5 @@
 	<include file="db/changelog/changes/026-add-effective-rate-slabs.xml"/>
 	<include file="db/changelog/changes/027-drop-invoice-slab-lines.xml"/>
 	<include file="db/changelog/changes/028-add-tariff-charges-and-savings.xml"/>
+	<include file="db/changelog/changes/029-add-savings-breakdown.xml"/>
 </databaseChangeLog>

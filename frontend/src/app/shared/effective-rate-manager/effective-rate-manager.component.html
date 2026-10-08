@@ -14,10 +14,10 @@
 				</div>
 			</div>
 			<div class="tariff-charges">
-				<label>Fixed charge (₹ / month)<input pInputText type="number" min="0" step="0.01" formControlName="fixedCharge"></label>
-				<label>Wheeling charge (₹ / unit)<input pInputText type="number" min="0" step="0.0001" formControlName="wheelingChargePerUnit"></label>
-				<label>Electricity duty (%)<input pInputText type="number" min="0" max="100" step="0.01" formControlName="electricityDutyPercent"></label>
-				<label>Tax on sale (paise / unit)<input pInputText type="number" min="0" step="0.01" formControlName="taxOnSalePaisePerUnit"></label>
+				<label>स्थिर आकार (₹ / महिना)<input pInputText type="number" min="0" step="0.01" formControlName="fixedCharge"></label>
+				<label>वहन आकार (₹ / युनिट)<input pInputText type="number" min="0" step="0.0001" formControlName="wheelingChargePerUnit"></label>
+				<label>वीज शुल्क (%)<input pInputText type="number" min="0" max="100" step="0.01" formControlName="electricityDutyPercent"></label>
+				<label>वीज विक्री कर (पैसे / युनिट)<input pInputText type="number" min="0" step="0.01" formControlName="taxOnSalePaisePerUnit"></label>
 			</div>
 		</div>
 		<div class="form-actions"><p-button *ngIf="editingId !== null" label="Cancel edit" severity="secondary" [outlined]="true" type="button" (onClick)="resetForm()"></p-button><p-button [label]="editingId === null ? 'Add rate' : 'Save changes'" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button></div>

@@ -16,6 +16,7 @@
         <a routerLink="/employees" routerLinkActive="current"><i class="pi pi-users"></i><span>Employee</span><i class="pi pi-angle-right nav-arrow"></i></a>
         <a routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer</span><i class="pi pi-angle-right nav-arrow"></i></a>
         <a routerLink="/referrals" routerLinkActive="current"><i class="pi pi-share-alt"></i><span>Referral</span><i class="pi pi-angle-right nav-arrow"></i></a>
+        <a routerLink="/referral-report" routerLinkActive="current"><i class="pi pi-chart-bar"></i><span>Referral Report</span><i class="pi pi-angle-right nav-arrow"></i></a>
         <a routerLink="/other-charges" routerLinkActive="current"><i class="pi pi-percentage"></i><span>Reason / Other Charges</span><i class="pi pi-angle-right nav-arrow"></i></a>
       </ng-container>
       <a *ngIf="auth.user?.role === 'CUSTOMER'" routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer Details</span><i class="pi pi-angle-right nav-arrow"></i></a>
@@ -33,6 +34,7 @@
         <div class="breadcrumb"><span>Workspace</span><i class="pi pi-angle-right"></i><strong>{{ activeTitle }}</strong></div>
       </div>
       <div class="topbar-right">
+			<p-button *ngIf="canUseSavingsCalculator" label="Savings calculator" icon="pi pi-calculator" severity="secondary" [outlined]="true" (onClick)="openSavingsCalculator()"></p-button>
         <span class="signed-in-name">{{ auth.user?.name }}</span>
         <button class="profile-trigger" type="button" (click)="userMenu.toggle($event)" aria-label="User profile menu">
           <p-avatar [label]="userInitials" shape="circle"></p-avatar><i class="pi pi-angle-down"></i>
@@ -40,6 +42,33 @@
         <p-menu #userMenu [model]="profileMenu" [popup]="true" appendTo="body"></p-menu>
       </div>
     </header>
+
+  <p-dialog header="Solar savings calculator" [(visible)]="calculatorVisible" [modal]="true" [style]="{ width: 'min(900px, 96vw)' }" [breakpoints]="{ '760px': '96vw' }" [maximizable]="true">
+    <p class="calculator-intro">Estimate the MSEDCL bill comparison using the selected consumer's current tariff and solar rate. This calculation does not create an invoice.</p>
+    <div class="calculator-loading" *ngIf="calculatorLoadingDetails" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '30px', height: '30px' }"></p-progressSpinner><span>Loading consumer accounts…</span></div>
+    <form *ngIf="!calculatorLoadingDetails" [formGroup]="calculatorForm" class="calculator-form" (ngSubmit)="calculateSavings()">
+      <label class="calculator-consumer">Consumer account<select formControlName="msedclDetailId" (change)="onCalculatorDetailChange()"><option [ngValue]="null" disabled>Select consumer</option><option *ngFor="let detail of calculatorDetails" [ngValue]="detail.id">{{ detail.consumerNo }} · {{ detail.name }} · {{ detail.branchName }}</option></select></label>
+      <p class="calculator-empty" *ngIf="!calculatorDetails.length">No consumer accounts are available for this user.</p>
+      <p class="calculator-charge-note" *ngIf="calculatorDetail?.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT'">Enter the expected MSEB bill amount after solar.</p>
+      <label *ngIf="calculatorDetail?.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT'">MSEB bill amount after solar<input pInputText type="number" min="0" step="0.01" formControlName="msebBillAmount"></label>
+      <div class="calculator-reading-group"><h3>Grid import</h3><label>Current meter reading<input pInputText type="number" min="0" step="0.01" formControlName="importCurrent"></label><label>Previous meter reading<input pInputText type="number" min="0" step="0.01" formControlName="importPrevious"></label></div>
+      <div class="calculator-reading-group"><h3>Solar export</h3><label>Current meter reading<input pInputText type="number" min="0" step="0.01" formControlName="exportCurrent"></label><label>Previous meter reading<input pInputText type="number" min="0" step="0.01" formControlName="exportPrevious"></label></div>
+      <div class="calculator-reading-group"><h3>Solar generation</h3><label>Current meter reading<input pInputText type="number" min="0" step="0.01" formControlName="generationCurrent"></label><label>Previous meter reading<input pInputText type="number" min="0" step="0.01" formControlName="generationPrevious"></label></div>
+      <label>Previous bank solar units<input pInputText type="number" min="0" step="0.01" formControlName="previousBankUnits"></label>
+      <p class="calculator-error" *ngIf="calculatorError" role="alert">{{ calculatorError }}</p>
+      <div class="calculator-actions"><p-button label="Calculate savings" icon="pi pi-calculator" type="submit" [loading]="calculatorRunning" [disabled]="calculatorForm.invalid || !calculatorDetails.length"></p-button></div>
+    </form>
+    <section class="calculator-result" *ngIf="calculatorResult as result">
+      <div class="calculator-summary"><div><span>Consumer</span><strong>{{ result.consumerName }}</strong></div><div><span>Units considered</span><strong>{{ result.totalConsumptionUnits | number:'1.2-4' }}</strong></div><div><span>Bill without solar</span><strong>{{ result.withoutSolarBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Bill with solar</span><strong>{{ result.withSolarBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-saved"><span>Estimated saving</span><strong>{{ result.consumerSavingsAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
+      <ng-container *ngIf="result.savingsDetails as details">
+        <div class="calculator-unit-breakdown"><span>Direct solar used: <strong>{{ details.directSolarUnits | number:'1.2-4' }} units</strong></span><span>Grid import: <strong>{{ details.gridImportUnits | number:'1.2-4' }} units</strong></span><span>Net grid units with solar: <strong>{{ details.netGridUnits | number:'1.2-4' }} units</strong></span><span>Solar bill: <strong>{{ details.solarBillUnits | number:'1.2-4' }} units · {{ details.solarAmount | currency:'INR':'symbol':'1.2-2' }}</strong></span></div>
+        <div class="calculator-bills">
+          <div><h3>Without solar · {{ details.withoutSolar.units | number:'1.2-4' }} units</h3><div class="calculator-band" *ngFor="let band of details.withoutSolar.bands"><span>{{ band.fromUnits | number:'1.0-2' }}–{{ band.upToUnits == null ? 'above' : (band.upToUnits | number:'1.0-2') }} units · {{ band.units | number:'1.2-4' }} × {{ band.ratePerUnit | currency:'INR':'symbol':'1.2-2' }}</span><strong>{{ band.amount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>स्थिर आकार</span><strong>{{ details.withoutSolar.fixedCharge | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>वहन आकार</span><strong>{{ details.withoutSolar.wheelingAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>वीज शुल्क · {{ details.withoutSolar.electricityDutyPercent }}%</span><strong>{{ details.withoutSolar.electricityDutyAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>वीज विक्री कर</span><strong>{{ details.withoutSolar.taxOnSaleAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost calculator-total"><span>Bill total</span><strong>{{ details.withoutSolar.totalAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
+          <div><h3>With solar · {{ details.netGridUnits | number:'1.2-4' }} grid units</h3><ng-container *ngIf="details.withSolarGrid as grid"><div class="calculator-band" *ngFor="let band of grid.bands"><span>{{ band.fromUnits | number:'1.0-2' }}–{{ band.upToUnits == null ? 'above' : (band.upToUnits | number:'1.0-2') }} units · {{ band.units | number:'1.2-4' }} × {{ band.ratePerUnit | currency:'INR':'symbol':'1.2-2' }}</span><strong>{{ band.amount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>स्थिर आकार</span><strong>{{ grid.fixedCharge | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>वहन आकार</span><strong>{{ grid.wheelingAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>वीज शुल्क · {{ grid.electricityDutyPercent }}%</span><strong>{{ grid.electricityDutyAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>वीज विक्री कर</span><strong>{{ grid.taxOnSaleAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></ng-container><div class="calculator-cost" *ngIf="details.gridAmountEntered"><span>MSEB bill amount entered</span><strong>{{ details.withSolarGridAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost"><span>Solar amount · {{ details.solarRatePerUnit | currency:'INR':'symbol':'1.2-2' }}/unit</span><strong>{{ details.solarAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div class="calculator-cost calculator-total"><span>Bill total with solar</span><strong>{{ result.withSolarBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
+        </div>
+      </ng-container>
+    </section>
+  </p-dialog>
 
     <main class="page-area"><router-outlet></router-outlet></main>
     <footer class="app-footer"><span>© 2026 Aditya Solar</span><span>People, branches, and companies in one place.</span><span>Secure workspace</span></footer>

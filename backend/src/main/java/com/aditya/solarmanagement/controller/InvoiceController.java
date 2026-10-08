@@ -27,6 +27,7 @@ import com.aditya.solarmanagement.dto.InvoicePaymentRequest;
 import com.aditya.solarmanagement.dto.InvoicePaymentResponse;
 import com.aditya.solarmanagement.dto.MsedclInvoiceRequest;
 import com.aditya.solarmanagement.dto.MsedclInvoiceResponse;
+import com.aditya.solarmanagement.dto.ReferralIncentiveReportRow;
 import com.aditya.solarmanagement.models.InvoicePaymentStatus;
 import com.aditya.solarmanagement.models.InvoiceStatus;
 import com.aditya.solarmanagement.service.InvoiceService;
@@ -54,6 +55,14 @@ public class InvoiceController {
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Invoices retrieved successfully",
 				invoiceService.invoices(authentication.getName(), invoiceNo, consumerName, consumerNo, paymentStatus,
 						invoiceStatus, invoiceDateFrom, invoiceDateTo)));
+	}
+
+	@GetMapping("/referral-incentives")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+	public ResponseEntity<ApiResponse<List<ReferralIncentiveReportRow>>> referralIncentives(
+			Authentication authentication) {
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Referral incentive report retrieved successfully",
+				invoiceService.referralIncentiveReport(authentication.getName())));
 	}
 
 	@PostMapping("/preview")

@@ -13,11 +13,11 @@ npm ci
 npm start -- --host 127.0.0.1
 ```
 
-Open `http://localhost:4200`. The local API URL is configured in `src/environments/environment.ts` and defaults to `http://localhost:8080/api/v1`.
+Open `http://localhost:4200`. `npm start` uses `src/environments/environment.local.ts` and the local API at `http://localhost:8081/api/v1`. To use the remote dev backend, start with `npm start -- --configuration development`; it targets `http://103.120.179.127:8081/api/v1`.
 
 ## Production and Mobile Configuration
 
-The production build replaces `src/environments/environment.ts` with `src/environments/environment.production.ts`. Its API base URL is `/api/v1`; configure the deployed web server or reverse proxy to forward that path to the backend. Update `apiBaseUrl` in the production environment file before building if the API is hosted elsewhere.
+The production build replaces `src/environments/environment.ts` with `src/environments/environment.production.ts` and targets `http://103.120.179.127:8082/api/v1`. The mobile build uses `src/environments/environment.mobile.ts` and targets the dev API at `http://103.120.179.127:8081/api/v1`.
 
 The mobile build uses `src/environments/environment.mobile.ts`; the APK build steps are in `../mobile/README.md`.
 
@@ -30,7 +30,8 @@ Build output is written to `dist/solar-management-frontend/browser`. Environment
 
 Environment files:
 
-- `src/environments/environment.ts`: local browser API URL.
+- `src/environments/environment.ts`: remote dev API URL.
+- `src/environments/environment.local.ts`: localhost API URL used by `npm start`.
 - `src/environments/environment.production.ts`: production web API URL.
 - `src/environments/environment.mobile.ts`: Android/Capacitor API URL.
 

@@ -170,6 +170,15 @@ export interface InvoiceReferralRecord {
   incentiveAmount: number;
 }
 
+export interface ReferralIncentiveReportRow {
+  referralId: number;
+  referralName: string;
+  month: string;
+  invoiceCount: number;
+  solarAmount: number;
+  incentiveAmount: number;
+}
+
 export interface MsedclInvoicePayload {
   msedclDetailId: number;
   invoiceDate: string;
@@ -242,6 +251,41 @@ export interface MsedclInvoiceRecord {
   withoutSolarBillAmount: number | null;
   withSolarBillAmount: number | null;
   consumerSavingsAmount: number | null;
+  savingsDetails: InvoiceSavingsDetails | null;
+}
+
+export interface InvoiceSavingsDetails {
+  directSolarUnits: number;
+  gridImportUnits: number;
+  totalUnits: number;
+  netGridUnits: number;
+  withoutSolar: InvoiceTariffBillDetails;
+  withSolarGrid: InvoiceTariffBillDetails | null;
+  withSolarGridAmount: number;
+  gridAmountEntered: boolean;
+  solarBillUnits: number;
+  solarRatePerUnit: number;
+  solarAmount: number;
+}
+
+export interface InvoiceTariffBillDetails {
+  units: number;
+  bands: Array<{
+    fromUnits: number;
+    upToUnits: number | null;
+    units: number;
+    ratePerUnit: number;
+    adjustmentPerUnit: number;
+    amount: number;
+  }>;
+  fixedCharge: number;
+  wheelingChargePerUnit: number;
+  wheelingAmount: number;
+  electricityDutyPercent: number;
+  electricityDutyAmount: number;
+  taxOnSalePaisePerUnit: number;
+  taxOnSaleAmount: number;
+  totalAmount: number;
 }
 
 export interface InvoicePaymentRecord {

@@ -24,6 +24,7 @@ import {
   MsedclInvoicePayload,
   MsedclInvoiceRecord,
   OtherChargeReasonRecord,
+  ReferralIncentiveReportRow,
   PageResult
 } from '../models/api.models';
 import { unwrap } from './api-envelope';
@@ -140,6 +141,10 @@ export class ManagementApiService {
     if (filters?.invoiceDateFrom) params = params.set('invoiceDateFrom', filters.invoiceDateFrom);
     if (filters?.invoiceDateTo) params = params.set('invoiceDateTo', filters.invoiceDateTo);
     return this.http.get<ApiResponse<MsedclInvoiceRecord[]>>(`${this.baseUrl}/invoices`, { params }).pipe(map(unwrap));
+  }
+
+  referralIncentiveReport(): Observable<ReferralIncentiveReportRow[]> {
+    return this.get('/invoices/referral-incentives');
   }
 
   paymentDetails(): Observable<InvoicePaymentRecord[]> {

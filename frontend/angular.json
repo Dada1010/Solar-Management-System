@@ -64,6 +64,17 @@
               "extractLicenses": false,
               "sourceMap": true
             },
+            "local": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.local.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            },
             "mobile": {
               "fileReplacements": [
                 {
@@ -84,9 +95,12 @@
             },
             "development": {
               "buildTarget": "solar-management-frontend:build:development"
+            },
+            "local": {
+              "buildTarget": "solar-management-frontend:build:local"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "local"
         },
         "test": {
           "builder": "@angular/build:unit-test"

@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.aditya.solarmanagement.dto.MsedclInvoiceRequest;
 import com.aditya.solarmanagement.dto.MsedclInvoiceResponse;
+import com.aditya.solarmanagement.dto.ReferralIncentiveReportRow;
 import com.aditya.solarmanagement.dto.InvoicePaymentRequest;
 import com.aditya.solarmanagement.dto.InvoicePaymentResponse;
 import com.aditya.solarmanagement.models.InvoicePaymentStatus;
@@ -17,6 +18,7 @@ public interface InvoiceService {
 	List<MsedclInvoiceResponse> invoices(String requestingEmail, String invoiceNo, String consumerName,
 			String consumerNo, InvoicePaymentStatus paymentStatus, InvoiceStatus invoiceStatus,
 			LocalDate invoiceDateFrom, LocalDate invoiceDateTo);
+	List<ReferralIncentiveReportRow> referralIncentiveReport(String requestingEmail);
 	MsedclInvoiceResponse previewInvoice(String requestingEmail, MsedclInvoiceRequest request);
 	MsedclInvoiceResponse createInvoice(String requestingEmail, MsedclInvoiceRequest request);
 	void cancelInvoice(String requestingEmail, Long invoiceId);

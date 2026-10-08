@@ -54,5 +54,6 @@ public record MsedclInvoiceResponse(
 		BigDecimal totalConsumptionUnits,
 		BigDecimal withoutSolarBillAmount,
 		BigDecimal withSolarBillAmount,
-		BigDecimal consumerSavingsAmount) {
+		BigDecimal consumerSavingsAmount,
+		InvoiceSavingsDetails savingsDetails) {
 }

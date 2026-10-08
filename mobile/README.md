@@ -11,7 +11,7 @@ The Android app is a Capacitor shell around the Angular application in `../front
 
 ## Local Emulator Run
 
-Start the backend on port `8080`, then from the `mobile` directory run:
+Start the backend dev profile on port `8081`, then from the `mobile` directory run:
 
 ```powershell
 npm install
@@ -19,7 +19,7 @@ npm run sync
 npm run open:android
 ```
 
-The mobile build selects `../frontend/src/environments/environment.mobile.ts`. Its default API URL, `http://10.0.2.2:8080/api/v1`, reaches port 8080 on the host computer from the standard Android emulator. Android Studio can then build and launch the app on a selected emulator.
+The mobile build selects `../frontend/src/environments/environment.mobile.ts` and uses `http://103.120.179.127:8081/api/v1` for the dev API. Android Studio can then build and launch the app on a selected emulator or device.
 
 After setting the Android SDK environment variables below, `npm run run:android` syncs and launches through the Capacitor CLI.
 
@@ -38,7 +38,7 @@ The APK is created at `android/app/build/outputs/apk/debug/app-debug.apk`. This 
 
 ## Development and Production API Configuration
 
-- Emulator development: update `../frontend/src/environments/environment.mobile.ts`; `10.0.2.2` is the standard Android emulator's host-machine alias.
+- Emulator or physical-device development: `../frontend/src/environments/environment.mobile.ts` targets `http://103.120.179.127:8081/api/v1`. Ensure the host is reachable from the device and the API port is open.
 - Physical-device development: set that file's `apiBaseUrl` to the development computer's reachable LAN address and port, allow the connection through the firewall, and allow the app origin in backend CORS settings.
 - Production APK: set `apiBaseUrl` to the deployed HTTPS API before syncing/building. Also update `capacitor.config.ts` to use the HTTPS Android scheme and disable cleartext traffic. Review `android/app/src/main/AndroidManifest.xml` and remove development-only cleartext access. Configure secure APK signing for release distribution; do not store signing credentials or keystores in source control.
 

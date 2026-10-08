@@ -14,6 +14,7 @@ import { CompanyEditorComponent } from '../features/company/company-editor/compa
 import { BranchEditorComponent } from '../features/branch/branch-editor/branch-editor.component';
 import { PeopleEditorComponent } from '../features/people/people-editor/people-editor.component';
 import { MsedclDetailEditorComponent } from '../features/people/msedcl-detail-editor/msedcl-detail-editor.component';
+import { ReferralReportComponent } from '../features/referral-report/referral-report.component';
 
 @NgModule({
   declarations: [
@@ -29,7 +30,8 @@ import { MsedclDetailEditorComponent } from '../features/people/msedcl-detail-ed
     ConsumerDetailsComponent,
     InvoiceComponent,
     OtherChargesComponent,
-    PaymentDetailsComponent
+    PaymentDetailsComponent,
+    ReferralReportComponent
   ],
   imports: [SharedModule, RouterModule],
   exports: [WorkspaceShellComponent]

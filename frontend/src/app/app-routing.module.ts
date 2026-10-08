@@ -13,6 +13,7 @@ import { OtherChargesComponent } from './features/other-charges/other-charges.co
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { PaymentDetailsComponent } from './features/payment-details/payment-details.component';
 import { PeopleComponent } from './features/people/people.component';
+import { ReferralReportComponent } from './features/referral-report/referral-report.component';
 import { WorkspaceShellComponent } from './layout/workspace-shell/workspace-shell.component';
 
 const routes: Routes = [
@@ -29,6 +30,7 @@ const routes: Routes = [
       { path: 'employees', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'COMPANY_EMPLOYEE', roles: ['ADMIN', 'USER'] } },
       { path: 'customers', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'CUSTOMER', roles: ['ADMIN', 'USER', 'CUSTOMER'] } },
       { path: 'referrals', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'REFERRAL', roles: ['ADMIN', 'USER'] } },
+      { path: 'referral-report', component: ReferralReportComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'USER'] } },
       { path: 'consumer-details', component: ConsumerDetailsComponent },
       { path: 'invoices', component: InvoiceComponent },
       { path: 'other-charges', component: OtherChargesComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'USER'] } },

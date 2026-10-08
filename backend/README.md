@@ -1,6 +1,6 @@
 # Backend Setup
 
-Spring Boot REST API for Aditya Solar Management. The API listens on port `8080` by default and uses MySQL and Liquibase.
+Spring Boot REST API for Aditya Solar Management. The dev profile listens on port `8081`; the prod profile listens on port `8082`. The API uses MySQL and Liquibase.
 
 ## Requirements
 
@@ -17,7 +17,13 @@ Spring Boot REST API for Aditya Solar Management. The API listens on port `8080`
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-The default API base URL is `http://localhost:8080/api/v1`. API documentation is available at `http://localhost:8080/swagger-ui/index.html` when the application is running.
+The dev API base URL is `http://localhost:8081/api/v1`. API documentation is available at `http://localhost:8081/swagger-ui/index.html` when the dev application is running. The prod profile listens on `http://localhost:8082` unless overridden by `SERVER_PORT`.
+
+To run the local profile, which inherits dev settings and binds to `localhost`, use:
+
+```powershell
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
+```
 
 ## Production Configuration
 

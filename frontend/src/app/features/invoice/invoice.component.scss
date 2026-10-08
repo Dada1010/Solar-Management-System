@@ -33,6 +33,9 @@
 .preview-values { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 15px; }
 .preview-values > div { display: grid; gap: 5px; color: #77867f; font-size: 10px; }
 .preview-values strong { color: #315548; font-size: 12px; }
+.savings-values { padding-top: 12px; border-top: 1px dashed #d6dfd6; }
+.saved-highlight strong { color: #1f7a45; font-size: 15px; }
+.savings-hint { margin: 12px 0 0; color: #8a6d2f; font-size: 11px; }
 .directory-heading { display: flex; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #e9eee8; color: #516b5f; font-size: 10px; letter-spacing: 1px; }
 .directory-heading span { color: #87958e; letter-spacing: 0; }
 .invoice-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #e9eee8; }
