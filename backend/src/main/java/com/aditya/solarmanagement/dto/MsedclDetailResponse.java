@@ -17,5 +17,7 @@ public record MsedclDetailResponse(
 		BigDecimal ratePerUnit,
 		String lastInvoiceNo,
 		int dueDays,
-		MsedclChargeType chargeType) {
+		MsedclChargeType chargeType,
+		Long referralId,
+		String referralName) {
 }

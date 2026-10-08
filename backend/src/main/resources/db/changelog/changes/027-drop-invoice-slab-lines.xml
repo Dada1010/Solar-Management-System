@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="027-drop-invoice-slab-lines" author="aditya">
+		<preConditions onFail="MARK_RAN">
+			<tableExists tableName="msedcl_invoice_slab_lines"/>
+		</preConditions>
+		<dropTable tableName="msedcl_invoice_slab_lines"/>
+	</changeSet>
+</databaseChangeLog>

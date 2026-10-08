@@ -9,6 +9,7 @@ import { BranchComponent } from './features/branch/branch.component';
 import { CompanyComponent } from './features/company/company.component';
 import { ConsumerDetailsComponent } from './features/consumer-details/consumer-details.component';
 import { InvoiceComponent } from './features/invoice/invoice.component';
+import { OtherChargesComponent } from './features/other-charges/other-charges.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { PaymentDetailsComponent } from './features/payment-details/payment-details.component';
 import { PeopleComponent } from './features/people/people.component';
@@ -27,8 +28,10 @@ const routes: Routes = [
       { path: 'branches', component: BranchComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'USER'] } },
       { path: 'employees', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'COMPANY_EMPLOYEE', roles: ['ADMIN', 'USER'] } },
       { path: 'customers', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'CUSTOMER', roles: ['ADMIN', 'USER', 'CUSTOMER'] } },
+      { path: 'referrals', component: PeopleComponent, canActivate: [RoleGuard], data: { employeeType: 'REFERRAL', roles: ['ADMIN', 'USER'] } },
       { path: 'consumer-details', component: ConsumerDetailsComponent },
       { path: 'invoices', component: InvoiceComponent },
+      { path: 'other-charges', component: OtherChargesComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'USER'] } },
       { path: 'payment-details', component: PaymentDetailsComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]

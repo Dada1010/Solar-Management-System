@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="028-add-tariff-charges-and-savings" author="aditya">
+		<addColumn tableName="effective_rates">
+			<column name="fixed_charge" type="DECIMAL(12,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+			<column name="wheeling_charge_per_unit" type="DECIMAL(12,4)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+			<column name="electricity_duty_percent" type="DECIMAL(5,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+			<column name="tax_on_sale_paise_per_unit" type="DECIMAL(8,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+		</addColumn>
+		<addColumn tableName="msedcl_invoices">
+			<column name="total_consumption_units" type="DECIMAL(14,4)"/>
+			<column name="without_solar_bill_amount" type="DECIMAL(14,2)"/>
+			<column name="with_solar_bill_amount" type="DECIMAL(14,2)"/>
+			<column name="consumer_savings_amount" type="DECIMAL(14,2)"/>
+		</addColumn>
+	</changeSet>
+</databaseChangeLog>

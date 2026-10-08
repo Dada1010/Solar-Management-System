@@ -27,4 +27,8 @@
 	<include file="db/changelog/changes/022-reconcile-payment-reversals.xml"/>
 	<include file="db/changelog/changes/023-drop-legacy-invoice-date-unique.xml"/>
 	<include file="db/changelog/changes/024-drop-legacy-invoice-date-unique.xml"/>
+	<include file="db/changelog/changes/025-add-referral-and-other-charges.xml"/>
+	<include file="db/changelog/changes/026-add-effective-rate-slabs.xml"/>
+	<include file="db/changelog/changes/027-drop-invoice-slab-lines.xml"/>
+	<include file="db/changelog/changes/028-add-tariff-charges-and-savings.xml"/>
 </databaseChangeLog>

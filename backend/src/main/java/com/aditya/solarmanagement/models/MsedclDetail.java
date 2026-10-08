@@ -58,8 +58,12 @@ public class MsedclDetail {
 	@JoinColumn(name = "customer_id", nullable = false)
 	private Employee customer;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "referral_id")
+	private Employee referral;
+
 	public MsedclDetail(String billingUnit, String name, String mobileNo, String consumerNo, BigDecimal ratePerUnit,
-			MsedclChargeType chargeType, int dueDays) {
+			MsedclChargeType chargeType, int dueDays, Employee referral) {
 		this.billingUnit = billingUnit;
 		this.name = name;
 		this.mobileNo = mobileNo;
@@ -67,10 +71,11 @@ public class MsedclDetail {
 		this.ratePerUnit = ratePerUnit;
 		this.chargeType = chargeType == null ? MsedclChargeType.ONLY_SOLAR_GENERATION : chargeType;
 		this.dueDays = dueDays;
+		this.referral = referral;
 	}
 
 	public void updateDetails(String billingUnit, String name, String mobileNo, String consumerNo,
-			BigDecimal ratePerUnit, MsedclChargeType chargeType, int dueDays) {
+			BigDecimal ratePerUnit, MsedclChargeType chargeType, int dueDays, Employee referral) {
 		this.billingUnit = billingUnit;
 		this.name = name;
 		this.mobileNo = mobileNo;
@@ -78,6 +83,7 @@ public class MsedclDetail {
 		this.ratePerUnit = ratePerUnit;
 		this.chargeType = chargeType == null ? MsedclChargeType.ONLY_SOLAR_GENERATION : chargeType;
 		this.dueDays = dueDays;
+		this.referral = referral;
 	}
 
 	public void setCustomer(Employee customer) {

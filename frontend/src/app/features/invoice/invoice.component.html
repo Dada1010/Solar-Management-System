@@ -22,11 +22,28 @@
 					<div class="reading-grid"><label>Current reading<input pInputText type="number" min="0" step="0.01" formControlName="generationCurrent"></label><label>Previous reading<input pInputText type="number" min="0" step="0.01" formControlName="generationPrevious"></label><label>Consumption<input pInputText type="number" [value]="generationConsumption" readonly></label></div>
 				</div>
 				<label class="mseb-amount" *ngIf="showMsebBillAmount">MSEB bill amount<input pInputText type="number" min="0" step="0.01" formControlName="msebBillAmount"></label>
+				<div class="reading-section other-charges">
+					<h3>Other charges</h3>
+					<div class="charge-picker">
+						<label>Reason<select [(ngModel)]="selectedReasonId" [ngModelOptions]="{ standalone: true }"><option [ngValue]="null">Select reason</option><option *ngFor="let reason of availableReasons" [ngValue]="reason.id">{{ reason.name }}</option></select></label>
+						<p-button label="Add charge" icon="pi pi-plus" severity="secondary" [outlined]="true" type="button" (onClick)="addOtherCharge()" [disabled]="selectedReasonId === null"></p-button>
+						<label>New reason<input pInputText maxlength="100" [(ngModel)]="newReasonName" [ngModelOptions]="{ standalone: true }" placeholder="e.g. Meter shifting" (keydown.enter)="$event.preventDefault(); createReason()"></label>
+						<p-button label="Create reason" icon="pi pi-save" severity="secondary" [outlined]="true" type="button" (onClick)="createReason()" [loading]="addingReason" [disabled]="!newReasonName.trim()"></p-button>
+					</div>
+					<div class="charge-rows" formArrayName="otherCharges">
+						<div class="charge-row" *ngFor="let row of otherChargeRows.controls; let i = index" [formGroupName]="i">
+							<strong>{{ reasonName(row.controls.reasonId.value) }}</strong>
+							<label>Amount<input pInputText type="number" min="0" step="0.01" formControlName="amount"></label>
+							<p-button icon="pi pi-trash" [text]="true" severity="danger" type="button" aria-label="Remove charge" (onClick)="removeOtherCharge(i)"></p-button>
+						</div>
+					</div>
+				</div>
 				<div class="invoice-actions"><p-button label="Preview invoice" icon="pi pi-calculator" type="submit" [loading]="previewing" [disabled]="form.invalid || details.length === 0"></p-button><p-button label="Save invoice" icon="pi pi-check" severity="success" type="button" [loading]="saving" [disabled]="!previewResult || form.invalid" (onClick)="save()"></p-button></div>
 			</form>
 			<section class="invoice-preview" *ngIf="previewResult as invoice">
 				<div class="preview-heading"><div><strong>INVOICE PREVIEW</strong><span>{{ invoice.consumerNo }} · {{ invoice.billingDate }}</span></div><strong class="invoice-total">{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div>
-				<div class="preview-values"><div *ngIf="invoice.rateSource !== 'DETAIL_EFFECTIVE' && invoice.rateSource !== 'BRANCH_EFFECTIVE' && invoice.rateSource !== 'COMPANY_EFFECTIVE'"><span>Rate per unit</span><strong>{{ invoice.ratePerUnit | number:'1.2-4' }} · {{ invoice.rateSource | lowercase }}</strong></div><div><span>Solar bill units</span><strong>{{ invoice.solarBillUnits | number:'1.2-4' }}</strong></div><div><span>Solar amount</span><strong>{{ invoice.solarAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div *ngIf="showMsebBillAmount"><span>MSEB bill amount</span><strong>{{ invoice.msebBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
+				<div class="preview-values"><div *ngIf="invoice.rateSource !== 'DETAIL_EFFECTIVE' && invoice.rateSource !== 'BRANCH_EFFECTIVE' && invoice.rateSource !== 'COMPANY_EFFECTIVE'"><span>Rate per unit</span><strong>{{ invoice.ratePerUnit | number:'1.2-4' }} · {{ invoice.rateSource | lowercase }}</strong></div><div><span>Solar bill units</span><strong>{{ invoice.solarBillUnits | number:'1.2-4' }}</strong></div><div><span>Solar amount</span><strong>{{ invoice.solarAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div *ngIf="showMsebBillAmount"><span>MSEB bill amount</span><strong>{{ invoice.msebBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div *ngIf="invoice.otherCharges.length"><span>Other charges</span><strong>{{ invoice.otherChargesAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div *ngIf="invoice.referral as referral"><span>Referral incentive · {{ referral.name }} ({{ referral.percentage | number:'1.2-2' }}%)</span><strong>{{ referral.incentiveAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
+				<div class="preview-values savings-values" *ngIf="invoice.consumerSavingsAmount != null"><div><span>Units used (with and without solar)</span><strong>{{ invoice.totalConsumptionUnits | number:'1.2-4' }}</strong></div><div><span>Bill without solar</span><strong>{{ invoice.withoutSolarBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Bill with solar</span><strong>{{ invoice.withSolarBillAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div><div><span>Consumer saves</span><strong>{{ invoice.consumerSavingsAmount | currency:'INR':'symbol':'1.2-2' }}</strong></div></div>
 			</section>
 		</section>
 		<section class="directory-panel invoice-history"><div class="directory-heading"><strong>INVOICE HISTORY</strong><span>{{ invoices.length }} invoices</span></div>
@@ -90,22 +107,26 @@
 			<ng-template pTemplate="emptymessage"><tr><td colspan="6" class="empty-cell">No payments recorded yet.</td></tr></ng-template>
 		</p-table>
 	</p-dialog>
-	<ng-template #invoiceDocument let-invoice>
+	<ng-template #invoiceDocument let-invoice let-internal="internal">
 		<div class="invoice-document">
 			<header class="print-header"><div><strong>ADITYA SOLAR</strong><span>Consumer energy invoice</span></div><div class="print-number"><span>Invoice number</span><strong>{{ invoice.invoiceNo }}</strong><span>Invoice date: {{ invoice.invoiceDate }}</span></div></header>
 			<div class="print-consumer"><div><span>Consumer</span><strong>{{ invoice.consumerName }}</strong></div><div><span>Consumer number</span><strong>{{ invoice.consumerNo }}</strong></div><div><span>Billing unit</span><strong>{{ invoice.billingUnit }}</strong></div><div><span>Billing date</span><strong>{{ invoice.billingDate }}</strong></div><div><span>Due date</span><strong>{{ invoice.dueDate }}</strong></div></div>
 			<h2>Meter readings</h2>
 			<table class="print-table"><thead><tr><th>Reading type</th><th>Current</th><th>Previous</th><th>Consumption</th></tr></thead><tbody><tr><td>Import</td><td>{{ invoice.importCurrent | number:'1.2-4' }}</td><td>{{ invoice.importPrevious | number:'1.2-4' }}</td><td>{{ invoice.importConsumption | number:'1.2-4' }}</td></tr><tr><td>Export</td><td>{{ invoice.exportCurrent | number:'1.2-4' }}</td><td>{{ invoice.exportPrevious | number:'1.2-4' }}</td><td>{{ invoice.exportConsumption | number:'1.2-4' }}</td></tr><tr><td>Generation</td><td>{{ invoice.generationCurrent | number:'1.2-4' }}</td><td>{{ invoice.generationPrevious | number:'1.2-4' }}</td><td>{{ invoice.generationConsumption | number:'1.2-4' }}</td></tr></tbody></table>
 			<h2>Solar calculation</h2>
-			<table class="print-table"><tbody><tr><td>Generation consumption</td><td>{{ invoice.generationConsumption | number:'1.2-4' }} units</td></tr><tr><td>Previous bank solar units</td><td>{{ invoice.previousBankUnits | number:'1.2-4' }} units</td></tr><tr><td>Bank solar units</td><td>{{ invoice.bankSolarUnits | number:'1.2-4' }} units</td></tr><tr class="print-emphasis"><td>Solar bill units (generation + previous bank − bank solar)</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }} units</td></tr><tr><td>Rate per unit</td><td>{{ invoice.ratePerUnit | currency:'INR':'symbol':'1.2-4' }}</td></tr><tr><td>Solar amount</td><td>{{ invoice.solarAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr *ngIf="invoice.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT'"><td>MSEB bill amount</td><td>{{ invoice.msebBillAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr class="print-total"><td>Invoice amount</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr></tbody></table>
+			<table class="print-table"><tbody><tr><td>Generation consumption</td><td>{{ invoice.generationConsumption | number:'1.2-4' }} units</td></tr><tr><td>Previous bank solar units</td><td>{{ invoice.previousBankUnits | number:'1.2-4' }} units</td></tr><tr><td>Bank solar units</td><td>{{ invoice.bankSolarUnits | number:'1.2-4' }} units</td></tr><tr class="print-emphasis"><td>Solar bill units (generation + previous bank − bank solar)</td><td>{{ invoice.solarBillUnits | number:'1.2-4' }} units</td></tr><tr><td>Rate per unit</td><td>{{ invoice.ratePerUnit | currency:'INR':'symbol':'1.2-4' }}</td></tr><tr><td>Solar amount</td><td>{{ invoice.solarAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr *ngIf="invoice.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT'"><td>MSEB bill amount</td><td>{{ invoice.msebBillAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr *ngFor="let charge of invoice.otherCharges"><td>{{ charge.reasonName }}</td><td>{{ charge.amount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr class="print-total"><td>Invoice amount</td><td>{{ invoice.invoiceAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr *ngIf="internal && invoice.referral as referral"><td>Referral incentive · {{ referral.name }} ({{ referral.percentage | number:'1.2-2' }}% of solar amount)</td><td>{{ referral.incentiveAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr></tbody></table>
+			<ng-container *ngIf="invoice.consumerSavingsAmount != null">
+				<h2>Your savings with solar</h2>
+				<table class="print-table"><tbody><tr><td>Units used (solar + grid)</td><td>{{ invoice.totalConsumptionUnits | number:'1.2-4' }} units</td></tr><tr><td>MSEDCL bill without solar</td><td>{{ invoice.withoutSolarBillAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr><td>Bill with solar (MSEDCL bill + solar amount)</td><td>{{ invoice.withSolarBillAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr><tr class="print-total"><td>You saved</td><td>{{ invoice.consumerSavingsAmount | currency:'INR':'symbol':'1.2-2' }}</td></tr></tbody></table>
+			</ng-container>
 			<footer>Generated by Aditya Solar Management System</footer>
 		</div>
 	</ng-template>
 	<p-dialog [(visible)]="invoiceViewVisible" [header]="'Invoice · ' + (viewingInvoice?.invoiceNo ?? '')" [modal]="true" [draggable]="false" [style]="{ width: 'min(58rem, 96vw)' }" [contentStyle]="{ 'max-height': '72vh', overflow: 'auto' }">
-		<ng-container *ngIf="viewingInvoice as invoice" [ngTemplateOutlet]="invoiceDocument" [ngTemplateOutletContext]="{ $implicit: invoice }"></ng-container>
+		<ng-container *ngIf="viewingInvoice as invoice" [ngTemplateOutlet]="invoiceDocument" [ngTemplateOutletContext]="{ $implicit: invoice, internal: canCreate }"></ng-container>
 		<ng-template pTemplate="footer"><p-button label="Close" severity="secondary" [outlined]="true" (onClick)="closeInvoiceView()"></p-button><p-button label="Print invoice" icon="pi pi-print" (onClick)="printViewedInvoice()"></p-button></ng-template>
 	</p-dialog>
 	<section class="invoice-print" *ngIf="printRecord as invoice">
-		<ng-container [ngTemplateOutlet]="invoiceDocument" [ngTemplateOutletContext]="{ $implicit: invoice }"></ng-container>
+		<ng-container [ngTemplateOutlet]="invoiceDocument" [ngTemplateOutletContext]="{ $implicit: invoice, internal: false }"></ng-container>
 	</section>
 </section>

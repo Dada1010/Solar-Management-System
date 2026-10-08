@@ -51,6 +51,8 @@ export class WorkspaceShellComponent implements OnDestroy {
       branches: 'Branches',
       employees: 'Employees',
       customers: 'Customers',
+      referrals: 'Referrals',
+      'other-charges': 'Reason / Other Charges',
       'consumer-details': 'Consumer Details',
       invoices: 'Invoices',
       'payment-details': 'Payment Details'

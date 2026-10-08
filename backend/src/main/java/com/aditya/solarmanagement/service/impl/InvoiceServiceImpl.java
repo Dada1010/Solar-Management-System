@@ -5,9 +5,12 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +24,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.aditya.solarmanagement.dto.MsedclInvoiceRequest;
 import com.aditya.solarmanagement.dto.MsedclInvoiceResponse;
+import com.aditya.solarmanagement.dto.InvoiceOtherChargeRequest;
+import com.aditya.solarmanagement.dto.InvoiceOtherChargeResponse;
+import com.aditya.solarmanagement.dto.InvoiceReferralResponse;
 import com.aditya.solarmanagement.dto.InvoicePaymentRequest;
 import com.aditya.solarmanagement.dto.InvoicePaymentResponse;
 import com.aditya.solarmanagement.models.Branch;
 import com.aditya.solarmanagement.models.EffectiveRate;
+import com.aditya.solarmanagement.models.EffectiveRateSlab;
 import com.aditya.solarmanagement.models.Employee;
 import com.aditya.solarmanagement.models.EmployeeRole;
 import com.aditya.solarmanagement.models.InvoicePaymentEntryType;
@@ -34,11 +41,13 @@ import com.aditya.solarmanagement.models.MsedclChargeType;
 import com.aditya.solarmanagement.models.MsedclDetail;
 import com.aditya.solarmanagement.models.MsedclInvoice;
 import com.aditya.solarmanagement.models.MsedclInvoicePayment;
+import com.aditya.solarmanagement.models.OtherChargeReason;
 import com.aditya.solarmanagement.repo.EffectiveRateRepository;
 import com.aditya.solarmanagement.repo.EmployeeRepository;
 import com.aditya.solarmanagement.repo.MsedclDetailRepository;
 import com.aditya.solarmanagement.repo.MsedclInvoiceRepository;
 import com.aditya.solarmanagement.repo.MsedclInvoicePaymentRepository;
+import com.aditya.solarmanagement.repo.OtherChargeReasonRepository;
 import com.aditya.solarmanagement.service.InvoiceService;
 import com.aditya.solarmanagement.service.InvoiceAttachmentStorageService;
 import com.aditya.solarmanagement.repo.specification.InvoiceSpecifications;
@@ -52,16 +61,18 @@ public class InvoiceServiceImpl implements InvoiceService {
 	private final MsedclInvoiceRepository invoices;
 	private final MsedclInvoicePaymentRepository payments;
 	private final EffectiveRateRepository effectiveRates;
+	private final OtherChargeReasonRepository chargeReasons;
 	private final InvoiceAttachmentStorageService attachmentStorage;
 
 	public InvoiceServiceImpl(EmployeeRepository employees, MsedclDetailRepository msedclDetails,
 			MsedclInvoiceRepository invoices, MsedclInvoicePaymentRepository payments, EffectiveRateRepository effectiveRates,
-			InvoiceAttachmentStorageService attachmentStorage) {
+			OtherChargeReasonRepository chargeReasons, InvoiceAttachmentStorageService attachmentStorage) {
 		this.employees = employees;
 		this.msedclDetails = msedclDetails;
 		this.invoices = invoices;
 		this.payments = payments;
 		this.effectiveRates = effectiveRates;
+		this.chargeReasons = chargeReasons;
 		this.attachmentStorage = attachmentStorage;
 	}
 
@@ -87,8 +98,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 		};
 		List<MsedclInvoice> results = invoices.findAll(specification, Sort.by(Sort.Direction.DESC, "id"));
 		Map<Long, BigDecimal> paidTotals = paymentTotals(results);
+		boolean includeReferral = requester.getRole() != EmployeeRole.CUSTOMER;
 		return results.stream().map(invoice -> invoiceResponse(invoice,
-				paidTotals.getOrDefault(invoice.getId(), BigDecimal.ZERO))).toList();
+				paidTotals.getOrDefault(invoice.getId(), BigDecimal.ZERO), includeReferral)).toList();
 	}
 
 	@Override
@@ -182,6 +194,11 @@ public class InvoiceServiceImpl implements InvoiceService {
 	@Override
 	public boolean hasInvoicesForDetail(Long detailId) {
 		return invoices.existsByMsedclDetail_Id(detailId);
+	}
+
+	@Override
+	public boolean hasInvoicesForReferral(Long referralId) {
+		return invoices.existsByReferral_Id(referralId);
 	}
 
 	@Override
@@ -307,13 +324,48 @@ public class InvoiceServiceImpl implements InvoiceService {
 			}
 			msebBillAmount = request.msebBillAmount().setScale(2, RoundingMode.HALF_UP);
 		}
-		BigDecimal invoiceAmount = solarAmount.add(msebBillAmount).setScale(2, RoundingMode.HALF_UP);
-		return new MsedclInvoice(detail, request.invoiceDate(), request.billingDate(),
+		BigDecimal otherChargesAmount = BigDecimal.ZERO.setScale(2);
+		Set<Long> reasonIds = new HashSet<>();
+		List<ChargeLine> chargeLines = new ArrayList<>();
+		for (InvoiceOtherChargeRequest charge : request.otherCharges()) {
+			if (!reasonIds.add(charge.reasonId())) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Each other charge reason can be added only once");
+			}
+			OtherChargeReason reason = chargeReasons.findById(charge.reasonId()).orElseThrow(() ->
+					new ResponseStatusException(HttpStatus.BAD_REQUEST, "Other charge reason not found"));
+			BigDecimal amount = charge.amount().setScale(2, RoundingMode.HALF_UP);
+			chargeLines.add(new ChargeLine(reason, amount));
+			otherChargesAmount = otherChargesAmount.add(amount);
+		}
+		BigDecimal invoiceAmount = solarAmount.add(msebBillAmount).add(otherChargesAmount)
+				.setScale(2, RoundingMode.HALF_UP);
+		Employee referral = detail.getReferral();
+		BigDecimal referralPercentage = referral == null || referral.getReferralPercentage() == null
+				? BigDecimal.ZERO : referral.getReferralPercentage();
+		// Incentive is based on the solar amount only, not MSEB or other charges.
+		BigDecimal incentiveAmount = solarAmount.multiply(referralPercentage)
+				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+		MsedclInvoice invoice = new MsedclInvoice(detail, request.invoiceDate(), request.billingDate(),
 				request.invoiceDate().plusDays(detail.getDueDays()), request.importCurrent(),
 				request.importPrevious(), importConsumption, request.exportCurrent(), request.exportPrevious(),
 				exportConsumption, request.generationCurrent(), request.generationPrevious(), generationConsumption,
 				request.previousBankUnits(), solarOffsetUnits, bankSolarUnits, solarBillUnits, rate.ratePerUnit(), rate.source(),
-				solarAmount, msebBillAmount, invoiceAmount);
+				solarAmount, msebBillAmount, invoiceAmount, referral, incentiveAmount, otherChargesAmount);
+		for (ChargeLine line : chargeLines) {
+			invoice.addOtherCharge(line.reason(), line.amount());
+		}
+		EffectiveRate tariff = resolveTariff(detail, request.billingDate());
+		if (tariff != null) {
+			// Units MSEDCL would bill with no solar: solar units used plus any net grid import.
+			BigDecimal netImportUnits = importConsumption.subtract(solarOffsetUnits);
+			BigDecimal totalUnits = solarBillUnits.max(BigDecimal.ZERO).add(netImportUnits);
+			BigDecimal withoutSolar = tariffBill(tariff, totalUnits);
+			BigDecimal msebWithSolar = detail.getChargeType() == MsedclChargeType.SOLAR_PLUS_MSEB_BILL_AMOUNT
+					? msebBillAmount : tariffBill(tariff, netImportUnits);
+			BigDecimal withSolar = msebWithSolar.add(solarAmount).setScale(2, RoundingMode.HALF_UP);
+			invoice.applySavings(totalUnits, withoutSolar, withSolar, withoutSolar.subtract(withSolar));
+		}
+		return invoice;
 	}
 
 	private BigDecimal consumption(BigDecimal current, BigDecimal previous, String readingType) {
@@ -322,6 +374,42 @@ public class InvoiceServiceImpl implements InvoiceService {
 					readingType + " current reading cannot be less than previous reading");
 		}
 		return current.subtract(previous).setScale(4, RoundingMode.HALF_UP);
+	}
+
+	private EffectiveRate resolveTariff(MsedclDetail detail, LocalDate billingDate) {
+		Branch branch = detail.getCustomer().getBranch();
+		List<List<EffectiveRate>> candidates = List.of(
+				effectiveRates.findAllByMsedclDetail_IdOrderByStartDateDescIdDesc(detail.getId()),
+				effectiveRates.findAllByBranch_IdOrderByStartDateDescIdDesc(branch.getId()),
+				effectiveRates.findAllByCompany_IdOrderByStartDateDescIdDesc(branch.getCompany().getId()));
+		for (List<EffectiveRate> rates : candidates) {
+			EffectiveRate current = rates.stream().filter(rate -> !rate.getStartDate().isAfter(billingDate))
+					.findFirst().orElse(null);
+			if (current != null && !current.getSlabs().isEmpty()) return current;
+		}
+		return null;
+	}
+
+	// Electricity duty is applied on energy, adjustment and wheeling charges, not on the fixed charge.
+	private BigDecimal tariffBill(EffectiveRate tariff, BigDecimal units) {
+		BigDecimal billedUnits = units.max(BigDecimal.ZERO);
+		BigDecimal remaining = billedUnits;
+		BigDecimal from = BigDecimal.ZERO;
+		BigDecimal energy = BigDecimal.ZERO;
+		BigDecimal adjustment = BigDecimal.ZERO;
+		for (EffectiveRateSlab slab : tariff.getSlabs()) {
+			if (remaining.signum() <= 0) break;
+			BigDecimal band = slab.getUpToUnits() == null ? remaining : remaining.min(slab.getUpToUnits().subtract(from));
+			energy = energy.add(band.multiply(slab.getRatePerUnit()));
+			adjustment = adjustment.add(band.multiply(slab.getAdjustmentPerUnit()));
+			remaining = remaining.subtract(band);
+			if (slab.getUpToUnits() != null) from = slab.getUpToUnits();
+		}
+		BigDecimal wheeling = billedUnits.multiply(tariff.getWheelingChargePerUnit());
+		BigDecimal dutyBase = energy.add(adjustment).add(wheeling);
+		BigDecimal duty = dutyBase.multiply(tariff.getElectricityDutyPercent()).divide(BigDecimal.valueOf(100));
+		BigDecimal taxOnSale = billedUnits.multiply(tariff.getTaxOnSalePaisePerUnit()).divide(BigDecimal.valueOf(100));
+		return tariff.getFixedCharge().add(dutyBase).add(duty).add(taxOnSale).setScale(2, RoundingMode.HALF_UP);
 	}
 
 	private ResolvedRate resolveRate(MsedclDetail detail, LocalDate billingDate) {
@@ -343,13 +431,22 @@ public class InvoiceServiceImpl implements InvoiceService {
 	}
 
 	private MsedclInvoiceResponse invoiceResponse(MsedclInvoice invoice) {
-		return invoiceResponse(invoice, payments.totalByInvoiceId(invoice.getId()));
+		return invoiceResponse(invoice, payments.totalByInvoiceId(invoice.getId()), true);
 	}
 
-	private MsedclInvoiceResponse invoiceResponse(MsedclInvoice invoice, BigDecimal paidAmount) {
+	private MsedclInvoiceResponse invoiceResponse(MsedclInvoice invoice, BigDecimal paidAmount, boolean includeReferral) {
 		if (invoice.getStatus() == InvoiceStatus.CANCELLED) paidAmount = BigDecimal.ZERO;
 		BigDecimal balanceAmount = invoice.getStatus() == InvoiceStatus.CANCELLED
 				? BigDecimal.ZERO : invoice.getInvoiceAmount().subtract(paidAmount).max(BigDecimal.ZERO);
+		List<InvoiceOtherChargeResponse> otherCharges = invoice.getOtherCharges().stream()
+				.map(charge -> new InvoiceOtherChargeResponse(charge.getReason().getId(), charge.getReasonName(),
+						charge.getAmount()))
+				.toList();
+		InvoiceReferralResponse referral = includeReferral && invoice.getReferral() != null
+				? new InvoiceReferralResponse(invoice.getReferral().getId(),
+						invoice.getReferral().getFirstName() + " " + invoice.getReferral().getLastName(),
+						invoice.getReferralPercentage(), invoice.getIncentiveAmount())
+				: null;
 		return new MsedclInvoiceResponse(invoice.getId(), invoice.getId(), invoice.getInvoiceNo(), invoice.getCompany().getId(),
 				invoice.getBranch().getId(), invoice.getMsedclDetail().getId(), invoice.getConsumerNo(),
 				invoice.getConsumerName(), invoice.getBillingUnit(), invoice.getChargeType(), invoice.getStatus(),
@@ -360,8 +457,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 				invoice.getGenerationCurrent(), invoice.getGenerationPrevious(), invoice.getGenerationConsumption(),
 				invoice.getPreviousBankUnits(), invoice.getSolarOffsetUnits(), invoice.getBankSolarUnits(),
 				invoice.getSolarBillUnits(), invoice.getRatePerUnit(), invoice.getRateSource(), invoice.getSolarAmount(), invoice.getMsebBillAmount(),
+				invoice.getOtherChargesAmount(), otherCharges,
 				invoice.getInvoiceAmount(), paidAmount, balanceAmount, invoice.getMsebBillFileName(),
-				invoice.getMsebBillUploadedAt());
+				invoice.getMsebBillUploadedAt(), referral, invoice.getTotalConsumptionUnits(),
+				invoice.getWithoutSolarBillAmount(), invoice.getWithSolarBillAmount(), invoice.getConsumerSavingsAmount());
 	}
 
 	private Map<Long, BigDecimal> paymentTotals(List<MsedclInvoice> invoiceList) {
@@ -390,4 +489,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 	}
 
 	private record ResolvedRate(BigDecimal ratePerUnit, String source) {}
+
+	private record ChargeLine(OtherChargeReason reason, BigDecimal amount) {}
 }

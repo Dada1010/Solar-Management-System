@@ -25,6 +25,8 @@ import com.aditya.solarmanagement.dto.EmployeeRequest;
 import com.aditya.solarmanagement.dto.EmployeeResponse;
 import com.aditya.solarmanagement.dto.EffectiveRateRequest;
 import com.aditya.solarmanagement.dto.EffectiveRateResponse;
+import com.aditya.solarmanagement.dto.EffectiveRateSlabRequest;
+import com.aditya.solarmanagement.dto.EffectiveRateSlabResponse;
 import com.aditya.solarmanagement.dto.MsedclDetailRequest;
 import com.aditya.solarmanagement.dto.MsedclDetailResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
@@ -249,9 +251,11 @@ public class ManagementServiceImpl implements ManagementService {
 		EmployeeRole role = request.employeeType() == Employee.EmployeeType.CUSTOMER
 				? EmployeeRole.CUSTOMER
 				: EmployeeRole.USER;
+		assertReferralPercentage(request);
 		Employee employee = employees.save(new Employee(request.firstName().trim(), request.lastName().trim(),
 				request.address(), request.mobileNo(), request.emailAddress().trim().toLowerCase(),
-				passwordEncoder.encode("123456"), request.employeeType(), role, branch));
+				passwordEncoder.encode("123456"), request.employeeType(), role, branch,
+				request.referralPercentage()));
 		logger.info("Created employee id={} for branch id={}", employee.getId(), branch.getId());
 		return employeeResponse(employee);
 	}
@@ -271,8 +275,14 @@ public class ManagementServiceImpl implements ManagementService {
 		EmployeeRole role = request.employeeType() == Employee.EmployeeType.CUSTOMER
 				? EmployeeRole.CUSTOMER
 				: EmployeeRole.USER;
+		assertReferralPercentage(request);
+		if (employee.getEmployeeType() == Employee.EmployeeType.REFERRAL
+				&& request.employeeType() != Employee.EmployeeType.REFERRAL && isReferralInUse(id)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Referrals linked to consumers or invoices cannot change type");
+		}
 		employee.updateDetails(request.firstName().trim(), request.lastName().trim(), request.address(),
-				request.mobileNo(), emailAddress, request.employeeType(), role, branch);
+				request.mobileNo(), emailAddress, request.employeeType(), role, branch, request.referralPercentage());
 		Employee updatedEmployee = employees.save(employee);
 		logger.info("Updated employee id={} for branch id={}", id, branch.getId());
 		return employeeResponse(updatedEmployee);
@@ -288,8 +298,32 @@ public class ManagementServiceImpl implements ManagementService {
 		if (hasInvoiceHistory) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Customers with invoice history cannot be deleted");
 		}
+		if (employee.getEmployeeType() == Employee.EmployeeType.REFERRAL && isReferralInUse(id)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Referrals linked to consumers or invoices cannot be deleted");
+		}
 		employees.delete(employee);
 		logger.info("Deleted employee id={}", id);
+	}
+
+	private void assertReferralPercentage(EmployeeRequest request) {
+		if (request.employeeType() == Employee.EmployeeType.REFERRAL && request.referralPercentage() == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Referral percentage is required for referrals");
+		}
+	}
+
+	private boolean isReferralInUse(Long referralId) {
+		return msedclDetails.existsByReferral_Id(referralId) || invoiceService.hasInvoicesForReferral(referralId);
+	}
+
+	private Employee referralFor(Long referralId) {
+		if (referralId == null) return null;
+		Employee referral = employees.findById(referralId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Referral not found"));
+		if (referral.getEmployeeType() != Employee.EmployeeType.REFERRAL) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Selected person is not a referral");
+		}
+		return referral;
 	}
 
 	@Override
@@ -357,7 +391,8 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
 		}
 		MsedclDetail detail = new MsedclDetail(request.billingUnit().trim(), request.name().trim(),
-				request.mobileNo().trim(), consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays());
+				request.mobileNo().trim(), consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays(),
+				referralFor(request.referralId()));
 		customer.addMsedclDetail(detail);
 		employees.save(customer);
 		logger.info("Added MSEDCL detail id={} for customer id={}", detail.getId(), customerId);
@@ -397,7 +432,8 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
 		}
 		detail.updateDetails(request.billingUnit().trim(), request.name().trim(), request.mobileNo().trim(),
-				consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays());
+				consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays(),
+				referralFor(request.referralId()));
 		logger.info("Updated MSEDCL detail id={} for customer id={}", detail.getId(), customerId);
 		return msedclDetailResponse(detail);
 	}
@@ -450,7 +486,10 @@ public class ManagementServiceImpl implements ManagementService {
 		return new MsedclDetailResponse(detail.getId(), detail.getCustomer().getId(), branch.getCompany().getId(),
 				branch.getId(), branch.getName(),
 				detail.getBillingUnit(), detail.getName(), detail.getMobileNo(), detail.getConsumerNo(),
-				detail.getRatePerUnit(), detail.getLastInvoiceNo(), detail.getDueDays(), detail.getChargeType());
+				detail.getRatePerUnit(), detail.getLastInvoiceNo(), detail.getDueDays(), detail.getChargeType(),
+				detail.getReferral() == null ? null : detail.getReferral().getId(),
+				detail.getReferral() == null ? null
+						: detail.getReferral().getFirstName() + " " + detail.getReferral().getLastName());
 	}
 
 	@Override
@@ -489,6 +528,9 @@ public class ManagementServiceImpl implements ManagementService {
 		}
 		EffectiveRate rate = new EffectiveRate(request.startDate(), request.ratePerUnit(), owner.company(), owner.branch(),
 				owner.msedclDetail());
+		rate.replaceSlabs(slabSpecs(request.slabs()));
+		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
+				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
 		EffectiveRate saved = effectiveRates.save(rate);
 		logger.info("Added effective rate id={} ownerType={} ownerId={}", saved.getId(), ownerType, ownerId);
 		return effectiveRateResponse(saved);
@@ -506,6 +548,9 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "A rate already exists for this start date");
 		}
 		rate.updateDetails(request.startDate(), request.ratePerUnit());
+		rate.replaceSlabs(slabSpecs(request.slabs()));
+		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
+				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
 		logger.info("Updated effective rate id={} ownerType={} ownerId={}", rateId, ownerType, ownerId);
 		return effectiveRateResponse(rate);
 	}
@@ -557,7 +602,32 @@ public class ManagementServiceImpl implements ManagementService {
 	}
 
 	private EffectiveRateResponse effectiveRateResponse(EffectiveRate rate) {
-		return new EffectiveRateResponse(rate.getId(), rate.getStartDate(), rate.getRatePerUnit());
+		return new EffectiveRateResponse(rate.getId(), rate.getStartDate(), rate.getRatePerUnit(),
+				rate.getSlabs().stream().map(slab -> new EffectiveRateSlabResponse(slab.getUpToUnits(),
+						slab.getRatePerUnit(), slab.getAdjustmentPerUnit())).toList(),
+				rate.getFixedCharge(), rate.getWheelingChargePerUnit(), rate.getElectricityDutyPercent(),
+				rate.getTaxOnSalePaisePerUnit());
+	}
+
+	private List<EffectiveRate.SlabSpec> slabSpecs(List<EffectiveRateSlabRequest> slabs) {
+		List<EffectiveRate.SlabSpec> specs = new java.util.ArrayList<>();
+		java.math.BigDecimal previous = java.math.BigDecimal.ZERO;
+		for (int index = 0; index < slabs.size(); index++) {
+			EffectiveRateSlabRequest slab = slabs.get(index);
+			if (index == slabs.size() - 1) {
+				if (slab.upToUnits() != null) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The last slab must have no upper limit");
+				}
+			} else {
+				if (slab.upToUnits() == null || slab.upToUnits().compareTo(previous) <= 0) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"Each slab limit must be greater than the previous slab limit");
+				}
+				previous = slab.upToUnits();
+			}
+			specs.add(new EffectiveRate.SlabSpec(slab.upToUnits(), slab.ratePerUnit(), slab.adjustmentPerUnit()));
+		}
+		return specs;
 	}
 
 	private record RateOwner(EffectiveRateOwnerType ownerType, Company company, Branch branch, MsedclDetail msedclDetail) {}
@@ -582,7 +652,8 @@ public class ManagementServiceImpl implements ManagementService {
 		Branch branch = employee.getBranch();
 		return new EmployeeResponse(employee.getId(), branch.getCompany().getId(), branch.getId(), branch.getName(),
 				employee.getFirstName(), employee.getLastName(), employee.getAddress(), employee.getMobileNo(), employee.getEmailAddress(),
-				employee.getEmployeeType(), employee.getRole(), employee.mustChangePassword());
+				employee.getEmployeeType(), employee.getRole(), employee.mustChangePassword(),
+				employee.getReferralPercentage());
 	}
 
 	private Pageable pageable(int page, int size) {

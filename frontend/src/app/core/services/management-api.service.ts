@@ -23,6 +23,7 @@ import {
   MsedclDetailRecord,
   MsedclInvoicePayload,
   MsedclInvoiceRecord,
+  OtherChargeReasonRecord,
   PageResult
 } from '../models/api.models';
 import { unwrap } from './api-envelope';
@@ -143,6 +144,22 @@ export class ManagementApiService {
 
   paymentDetails(): Observable<InvoicePaymentRecord[]> {
     return this.get('/payment-details');
+  }
+
+  otherChargeReasons(): Observable<OtherChargeReasonRecord[]> {
+    return this.get('/other-charge-reasons');
+  }
+
+  addOtherChargeReason(name: string): Observable<OtherChargeReasonRecord> {
+    return this.post('/other-charge-reasons', { name });
+  }
+
+  updateOtherChargeReason(id: number, name: string): Observable<OtherChargeReasonRecord> {
+    return this.put(`/other-charge-reasons/${id}`, { name });
+  }
+
+  deleteOtherChargeReason(id: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/other-charge-reasons/${id}`).pipe(map(unwrap));
   }
 
   previewInvoice(payload: MsedclInvoicePayload): Observable<MsedclInvoiceRecord> {

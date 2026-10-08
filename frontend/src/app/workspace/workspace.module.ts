@@ -7,6 +7,7 @@ import { CompanyComponent } from '../features/company/company.component';
 import { PeopleComponent } from '../features/people/people.component';
 import { ConsumerDetailsComponent } from '../features/consumer-details/consumer-details.component';
 import { InvoiceComponent } from '../features/invoice/invoice.component';
+import { OtherChargesComponent } from '../features/other-charges/other-charges.component';
 import { PaymentDetailsComponent } from '../features/payment-details/payment-details.component';
 import { DashboardComponent } from '../features/dashboard/dashboard.component';
 import { CompanyEditorComponent } from '../features/company/company-editor/company-editor.component';
@@ -27,6 +28,7 @@ import { MsedclDetailEditorComponent } from '../features/people/msedcl-detail-ed
     MsedclDetailEditorComponent,
     ConsumerDetailsComponent,
     InvoiceComponent,
+    OtherChargesComponent,
     PaymentDetailsComponent
   ],
   imports: [SharedModule, RouterModule],

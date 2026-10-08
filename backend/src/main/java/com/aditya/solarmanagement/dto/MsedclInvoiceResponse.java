@@ -3,6 +3,7 @@ package com.aditya.solarmanagement.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.aditya.solarmanagement.models.MsedclChargeType;
 import com.aditya.solarmanagement.models.InvoiceStatus;
@@ -42,9 +43,16 @@ public record MsedclInvoiceResponse(
 		String rateSource,
 		BigDecimal solarAmount,
 		BigDecimal msebBillAmount,
+		BigDecimal otherChargesAmount,
+		List<InvoiceOtherChargeResponse> otherCharges,
 		BigDecimal invoiceAmount,
 		BigDecimal paidAmount,
 		BigDecimal balanceAmount,
 		String msebBillFileName,
-		LocalDateTime msebBillUploadedAt) {
+		LocalDateTime msebBillUploadedAt,
+		InvoiceReferralResponse referral,
+		BigDecimal totalConsumptionUnits,
+		BigDecimal withoutSolarBillAmount,
+		BigDecimal withSolarBillAmount,
+		BigDecimal consumerSavingsAmount) {
 }

@@ -9,4 +9,5 @@ public interface MsedclDetailRepository extends JpaRepository<MsedclDetail, Long
 		JpaSpecificationExecutor<MsedclDetail> {
 	boolean existsByConsumerNoIgnoreCase(String consumerNo);
 	boolean existsByConsumerNoIgnoreCaseAndIdNot(String consumerNo, Long detailId);
+	boolean existsByReferral_Id(Long referralId);
 }

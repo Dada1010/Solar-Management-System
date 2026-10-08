@@ -6,19 +6,35 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export type EmployeeType = 'CUSTOMER' | 'COMPANY_EMPLOYEE';
+export type EmployeeType = 'CUSTOMER' | 'COMPANY_EMPLOYEE' | 'REFERRAL';
 export type EmployeeRole = 'ADMIN' | 'USER' | 'CUSTOMER';
 export type EffectiveRateOwnerType = 'COMPANY' | 'BRANCH' | 'MSEDCL_DETAIL';
+
+export interface EffectiveRateSlabRecord {
+  upToUnits: number | null;
+  ratePerUnit: number;
+  adjustmentPerUnit: number;
+}
 
 export interface EffectiveRateRecord {
   id: number;
   startDate: string;
   ratePerUnit: number;
+  slabs: EffectiveRateSlabRecord[];
+  fixedCharge: number;
+  wheelingChargePerUnit: number;
+  electricityDutyPercent: number;
+  taxOnSalePaisePerUnit: number;
 }
 
 export interface EffectiveRatePayload {
   startDate: string;
   ratePerUnit: number;
+  slabs: EffectiveRateSlabRecord[];
+  fixedCharge: number;
+  wheelingChargePerUnit: number;
+  electricityDutyPercent: number;
+  taxOnSalePaisePerUnit: number;
 }
 
 export interface LoginResult {
@@ -70,6 +86,7 @@ export interface EmployeeRecord {
   employeeType: EmployeeType;
   role: EmployeeRole;
   mustChangePassword: boolean;
+  referralPercentage: number | null;
 }
 
 export interface CompanyPayload {
@@ -96,6 +113,7 @@ export interface EmployeePayload {
   mobileNo: string;
   emailAddress: string;
   employeeType: EmployeeType;
+  referralPercentage: number | null;
 }
 
 export interface MsedclDetailRecord {
@@ -112,6 +130,8 @@ export interface MsedclDetailRecord {
   lastInvoiceNo: string | null;
   dueDays: number;
   chargeType: MsedclChargeType;
+  referralId: number | null;
+  referralName: string | null;
 }
 
 export type MsedclChargeType = 'ONLY_SOLAR_GENERATION' | 'SOLAR_PLUS_MSEB_BILL_AMOUNT';
@@ -124,6 +144,30 @@ export interface MsedclDetailPayload {
   ratePerUnit: number;
   chargeType: MsedclChargeType;
   dueDays: number;
+  referralId: number | null;
+}
+
+export interface OtherChargeReasonRecord {
+  id: number;
+  name: string;
+}
+
+export interface InvoiceOtherChargePayload {
+  reasonId: number;
+  amount: number;
+}
+
+export interface InvoiceOtherChargeRecord {
+  reasonId: number;
+  reasonName: string;
+  amount: number;
+}
+
+export interface InvoiceReferralRecord {
+  id: number;
+  name: string;
+  percentage: number | null;
+  incentiveAmount: number;
 }
 
 export interface MsedclInvoicePayload {
@@ -138,6 +182,7 @@ export interface MsedclInvoicePayload {
   generationPrevious: number;
   previousBankUnits: number;
   msebBillAmount: number | null;
+  otherCharges: InvoiceOtherChargePayload[];
 }
 
 export interface InvoiceFilters {
@@ -185,11 +230,18 @@ export interface MsedclInvoiceRecord {
   rateSource: string;
   solarAmount: number;
   msebBillAmount: number;
+  otherChargesAmount: number;
+  otherCharges: InvoiceOtherChargeRecord[];
   invoiceAmount: number;
   paidAmount: number;
   balanceAmount: number;
   msebBillFileName: string | null;
   msebBillUploadedAt: string | null;
+  referral: InvoiceReferralRecord | null;
+  totalConsumptionUnits: number | null;
+  withoutSolarBillAmount: number | null;
+  withSolarBillAmount: number | null;
+  consumerSavingsAmount: number | null;
 }
 
 export interface InvoicePaymentRecord {

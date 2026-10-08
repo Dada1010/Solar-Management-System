@@ -1,0 +1,21 @@
+<section class="feature-page">
+	<header class="feature-heading">
+		<div><p class="eyebrow">ADITYA SOLAR / BILLING SETUP</p><h1>Reason / Other Charges</h1><p>Reasons you can select when creating an invoice. Amounts are entered on each invoice and start at 0.</p></div>
+	</header>
+	<section class="directory-panel">
+		<div class="directory-heading"><strong>REASONS</strong><span>{{ rows.length }} reasons</span></div>
+		<form class="reason-form" (ngSubmit)="save()">
+			<label>Reason name<input pInputText name="reasonName" maxlength="100" [(ngModel)]="name" placeholder="e.g. Meter shifting"></label>
+			<div class="reason-actions">
+				<p-button *ngIf="editingId !== null" label="Cancel edit" severity="secondary" [outlined]="true" type="button" (onClick)="reset()"></p-button>
+				<p-button [label]="editingId === null ? 'Add reason' : 'Save changes'" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="!name.trim()"></p-button>
+			</div>
+		</form>
+		<div class="loading-panel" *ngIf="loading" role="status"><p-progressSpinner strokeWidth="4" [style]="{ width: '38px', height: '38px' }"></p-progressSpinner><span>Loading reasons…</span></div>
+		<p-table *ngIf="!loading" appResponsiveTable [value]="rows" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '24rem' }">
+			<ng-template pTemplate="header"><tr><th>Reason</th><th class="action-cell">Actions</th></tr></ng-template>
+			<ng-template pTemplate="body" let-reason><tr><td><span class="p-datatable-column-title">Reason</span>{{ reason.name }}</td><td class="action-cell"><span class="p-datatable-column-title">Actions</span><p-button icon="pi pi-pencil" [text]="true" severity="secondary" aria-label="Rename reason" (onClick)="edit(reason)"></p-button><p-button *ngIf="canDelete" icon="pi pi-trash" [text]="true" severity="danger" aria-label="Delete reason" (onClick)="remove(reason)"></p-button></td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="2" class="empty-cell">No reasons added yet.</td></tr></ng-template>
+		</p-table>
+	</section>
+</section>

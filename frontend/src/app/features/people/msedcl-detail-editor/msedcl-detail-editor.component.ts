@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { MsedclChargeType, MsedclDetailPayload, MsedclDetailRecord } from '../../../core/models/api.models';
+import { EmployeeRecord, MsedclChargeType, MsedclDetailPayload, MsedclDetailRecord } from '../../../core/models/api.models';
+import { ManagementApiService } from '../../../core/services/management-api.service';
 
 @Component({
 	selector: 'app-msedcl-detail-editor',
@@ -8,8 +9,10 @@ import { MsedclChargeType, MsedclDetailPayload, MsedclDetailRecord } from '../..
 	styleUrl: './msedcl-detail-editor.component.scss',
 	standalone: false
 })
-export class MsedclDetailEditorComponent implements OnChanges {
+export class MsedclDetailEditorComponent implements OnInit, OnChanges {
 	private readonly formBuilder = inject(FormBuilder);
+	private readonly api = inject(ManagementApiService);
+	referrals: EmployeeRecord[] = [];
 	@Input() detail: MsedclDetailRecord | null = null;
 	@Input() canWrite = false;
 	@Input() saving = false;
@@ -22,8 +25,18 @@ export class MsedclDetailEditorComponent implements OnChanges {
 		consumerNo: ['', Validators.required],
 		ratePerUnit: [0, [Validators.required, Validators.min(0)]],
 		dueDays: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
-		chargeType: this.formBuilder.nonNullable.control<MsedclChargeType>('ONLY_SOLAR_GENERATION', Validators.required)
+		chargeType: this.formBuilder.nonNullable.control<MsedclChargeType>('ONLY_SOLAR_GENERATION', Validators.required),
+		referralId: this.formBuilder.control<number | null>(null)
 	});
+
+	ngOnInit(): void {
+		if (!this.canWrite) return;
+		// Referral list is optional; the editor still works if it cannot be loaded.
+		this.api.employeesByType('REFERRAL', 0, 100).subscribe({
+			next: (result) => this.referrals = result.items,
+			error: () => this.referrals = []
+		});
+	}
 
 	ngOnChanges(changes: SimpleChanges): void {
 		if (changes['detail']) this.resetForm();
@@ -49,7 +62,8 @@ export class MsedclDetailEditorComponent implements OnChanges {
 			consumerNo: this.detail?.consumerNo ?? '',
 			ratePerUnit: this.detail?.ratePerUnit ?? 0,
 			dueDays: this.detail?.dueDays ?? 0,
-			chargeType: this.detail?.chargeType ?? 'ONLY_SOLAR_GENERATION'
+			chargeType: this.detail?.chargeType ?? 'ONLY_SOLAR_GENERATION',
+			referralId: this.detail?.referralId ?? null
 		});
 	}
 }

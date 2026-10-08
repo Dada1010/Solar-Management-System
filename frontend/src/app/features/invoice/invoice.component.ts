@@ -1,9 +1,9 @@
 import { Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MenuItem, MessageService } from 'primeng/api';
 import { Menu } from 'primeng/menu';
-import { forkJoin, Subscription } from 'rxjs';
-import { InvoiceFilters, InvoicePaymentPayload, InvoicePaymentRecord, InvoicePaymentType, MsedclDetailRecord, MsedclInvoicePayload, MsedclInvoiceRecord } from '../../core/models/api.models';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { InvoiceFilters, InvoicePaymentPayload, InvoicePaymentRecord, InvoicePaymentType, MsedclDetailRecord, MsedclInvoicePayload, MsedclInvoiceRecord, OtherChargeReasonRecord } from '../../core/models/api.models';
 import { AuthService } from '../../core/services/auth.service';
 import { ManagementApiService } from '../../core/services/management-api.service';
 
@@ -16,6 +16,10 @@ import { ManagementApiService } from '../../core/services/management-api.service
 export class InvoiceComponent implements OnDestroy {
 	private readonly formBuilder = inject(FormBuilder);
 	details: MsedclDetailRecord[] = [];
+	reasons: OtherChargeReasonRecord[] = [];
+	selectedReasonId: number | null = null;
+	newReasonName = '';
+	addingReason = false;
 	invoices: MsedclInvoiceRecord[] = [];
 	invoiceNoFilter = '';
 	consumerNameFilter = '';
@@ -60,7 +64,8 @@ export class InvoiceComponent implements OnDestroy {
 		generationCurrent: this.formBuilder.nonNullable.control(0, [Validators.required, Validators.min(0)]),
 		generationPrevious: this.formBuilder.nonNullable.control(0, [Validators.required, Validators.min(0)]),
 		previousBankUnits: this.formBuilder.nonNullable.control(0, [Validators.required, Validators.min(0)]),
-		msebBillAmount: this.formBuilder.nonNullable.control(0, [Validators.required, Validators.min(0)])
+		msebBillAmount: this.formBuilder.nonNullable.control(0, [Validators.required, Validators.min(0)]),
+		otherCharges: this.formBuilder.array<FormGroup<{ reasonId: FormControl<number>; amount: FormControl<number> }>>([])
 	});
 	readonly paymentForm = this.formBuilder.nonNullable.group({
 		paymentDate: [this.today(), Validators.required],
@@ -134,6 +139,51 @@ export class InvoiceComponent implements OnDestroy {
 		return this.selectedDetail?.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT';
 	}
 
+	get otherChargeRows(): FormArray<FormGroup<{ reasonId: FormControl<number>; amount: FormControl<number> }>> {
+		return this.form.controls.otherCharges;
+	}
+
+	get availableReasons(): OtherChargeReasonRecord[] {
+		const used = new Set(this.otherChargeRows.controls.map((row) => row.controls.reasonId.value));
+		return this.reasons.filter((reason) => !used.has(reason.id));
+	}
+
+	reasonName(reasonId: number): string {
+		return this.reasons.find((reason) => reason.id === reasonId)?.name ?? 'Other charge';
+	}
+
+	addOtherCharge(): void {
+		if (this.selectedReasonId === null) return;
+		this.otherChargeRows.push(this.formBuilder.nonNullable.group({
+			reasonId: [Number(this.selectedReasonId)],
+			// New charges default to 0 until an amount is entered.
+			amount: [0, [Validators.required, Validators.min(0)]]
+		}));
+		this.selectedReasonId = null;
+	}
+
+	removeOtherCharge(index: number): void {
+		this.otherChargeRows.removeAt(index);
+	}
+
+	createReason(): void {
+		const name = this.newReasonName.trim();
+		if (!name || this.addingReason) return;
+		this.addingReason = true;
+		this.api.addOtherChargeReason(name).subscribe({
+			next: (reason) => {
+				this.reasons = [...this.reasons, reason].sort((a, b) => a.name.localeCompare(b.name));
+				this.selectedReasonId = reason.id;
+				this.newReasonName = '';
+				this.addingReason = false;
+			},
+			error: (error: unknown) => {
+				this.addingReason = false;
+				this.showError('Could not add reason', error);
+			}
+		});
+	}
+
 	get importConsumption(): number {
 		return this.consumption(this.form.controls.importCurrent.value, this.form.controls.importPrevious.value);
 	}
@@ -168,6 +218,8 @@ export class InvoiceComponent implements OnDestroy {
 
 	openCreateForm(): void {
 		this.previewResult = null;
+		this.otherChargeRows.clear();
+		this.selectedReasonId = null;
 		this.form.reset({
 			msedclDetailId: this.details[0]?.id ?? null,
 			invoiceDate: this.today(),
@@ -469,10 +521,15 @@ export class InvoiceComponent implements OnDestroy {
 
 	private load(): void {
 		this.loading = true;
-		forkJoin({ details: this.api.consumerDetails(), invoices: this.api.invoices() }).subscribe({
+		forkJoin({
+			details: this.api.consumerDetails(),
+			invoices: this.api.invoices(),
+			reasons: this.canCreate ? this.api.otherChargeReasons() : of<OtherChargeReasonRecord[]>([])
+		}).subscribe({
 			next: (result) => {
 				this.details = result.details;
 				this.invoices = result.invoices;
+				this.reasons = result.reasons;
 				if (this.details.length) this.form.controls.msedclDetailId.setValue(this.details[0].id);
 				this.loading = false;
 			},
@@ -521,7 +578,11 @@ export class InvoiceComponent implements OnDestroy {
 			generationCurrent: value.generationCurrent,
 			generationPrevious: value.generationPrevious,
 			previousBankUnits: value.previousBankUnits,
-			msebBillAmount: this.showMsebBillAmount ? value.msebBillAmount : null
+			msebBillAmount: this.showMsebBillAmount ? value.msebBillAmount : null,
+			otherCharges: value.otherCharges.map((charge) => ({
+				reasonId: Number(charge.reasonId),
+				amount: Number(charge.amount)
+			}))
 		};
 	}
 

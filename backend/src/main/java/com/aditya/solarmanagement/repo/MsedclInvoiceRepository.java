@@ -21,6 +21,7 @@ public interface MsedclInvoiceRepository extends JpaRepository<MsedclInvoice, Lo
 	Optional<MsedclInvoice> findByIdForUpdate(@Param("invoiceId") Long invoiceId);
 	boolean existsByMsedclDetail_IdAndBillingDateAndStatus(Long detailId, LocalDate billingDate, InvoiceStatus status);
 	boolean existsByMsedclDetail_Id(Long detailId);
+	boolean existsByReferral_Id(Long referralId);
 	List<MsedclInvoice> findAllByOrderByInvoiceDateDescIdDesc();
 	List<MsedclInvoice> findAllByMsedclDetail_Customer_Branch_IdOrderByInvoiceDateDescIdDesc(Long branchId);
 	List<MsedclInvoice> findAllByMsedclDetail_Customer_IdOrderByInvoiceDateDescIdDesc(Long customerId);

@@ -23,11 +23,16 @@ export class PeopleEditorComponent implements OnChanges {
 		emailAddress: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
 		mobileNo: [''],
 		address: [''],
-		branchId: this.formBuilder.control<number | null>(null, Validators.required)
+		branchId: this.formBuilder.control<number | null>(null, Validators.required),
+		referralPercentage: this.formBuilder.control<number | null>(null)
 	});
 
+	get isReferral(): boolean {
+		return this.employeeType === 'REFERRAL';
+	}
+
 	get accountLabel(): string {
-		return this.employeeType === 'CUSTOMER' ? 'customer' : 'employee';
+		return this.employeeType === 'CUSTOMER' ? 'customer' : this.isReferral ? 'referral' : 'employee';
 	}
 
 	ngOnChanges(changes: SimpleChanges): void {
@@ -44,17 +49,25 @@ export class PeopleEditorComponent implements OnChanges {
 			return;
 		}
 		const value = this.form.getRawValue();
-		this.savePerson.emit({ ...value, branchId: Number(value.branchId), employeeType: this.employeeType });
+		this.savePerson.emit({
+			...value,
+			branchId: Number(value.branchId),
+			employeeType: this.employeeType,
+			referralPercentage: this.isReferral ? Number(value.referralPercentage) : null
+		});
 	}
 
 	private resetForm(): void {
+		const percentage = this.form.controls.referralPercentage;
+		percentage.setValidators(this.isReferral ? [Validators.required, Validators.min(0), Validators.max(100)] : []);
 		this.form.reset({
 			firstName: this.person?.firstName ?? '',
 			lastName: this.person?.lastName ?? '',
 			emailAddress: this.person?.emailAddress ?? '',
 			mobileNo: this.person?.mobileNo ?? '',
 			address: this.person?.address ?? '',
-			branchId: this.person?.branchId ?? this.branches[0]?.id ?? null
+			branchId: this.person?.branchId ?? this.branches[0]?.id ?? null,
+			referralPercentage: this.person?.referralPercentage ?? null
 		});
 	}
 }

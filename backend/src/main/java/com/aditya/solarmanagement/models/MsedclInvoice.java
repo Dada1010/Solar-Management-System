@@ -3,8 +3,13 @@ package com.aditya.solarmanagement.models;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,6 +20,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -134,6 +141,36 @@ public class MsedclInvoice {
 	@Column(name = "invoice_amount", nullable = false, precision = 14, scale = 2)
 	private BigDecimal invoiceAmount;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "referral_id")
+	private Employee referral;
+
+	@Column(name = "referral_percentage", precision = 5, scale = 2)
+	private BigDecimal referralPercentage;
+
+	@Column(name = "incentive_amount", nullable = false, precision = 14, scale = 2)
+	private BigDecimal incentiveAmount = BigDecimal.ZERO;
+
+	@Column(name = "other_charges_amount", nullable = false, precision = 14, scale = 2)
+	private BigDecimal otherChargesAmount = BigDecimal.ZERO;
+
+	@OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OrderBy("id ASC")
+	@BatchSize(size = 50)
+	private List<MsedclInvoiceOtherCharge> otherCharges = new ArrayList<>();
+
+	@Column(name = "total_consumption_units", precision = 14, scale = 4)
+	private BigDecimal totalConsumptionUnits;
+
+	@Column(name = "without_solar_bill_amount", precision = 14, scale = 2)
+	private BigDecimal withoutSolarBillAmount;
+
+	@Column(name = "with_solar_bill_amount", precision = 14, scale = 2)
+	private BigDecimal withSolarBillAmount;
+
+	@Column(name = "consumer_savings_amount", precision = 14, scale = 2)
+	private BigDecimal consumerSavingsAmount;
+
 	@Column(name = "mseb_bill_storage_name", length = 100)
 	private String msebBillStorageName;
 
@@ -153,7 +190,7 @@ public class MsedclInvoice {
 			BigDecimal previousBankUnits, BigDecimal solarOffsetUnits, BigDecimal bankSolarUnits,
 			BigDecimal solarBillUnits,
 			BigDecimal ratePerUnit, String rateSource, BigDecimal solarAmount, BigDecimal msebBillAmount,
-			BigDecimal invoiceAmount) {
+			BigDecimal invoiceAmount, Employee referral, BigDecimal incentiveAmount, BigDecimal otherChargesAmount) {
 		this.msedclDetail = detail;
 		this.branch = detail.getCustomer().getBranch();
 		this.company = branch.getCompany();
@@ -184,6 +221,22 @@ public class MsedclInvoice {
 		this.solarAmount = solarAmount;
 		this.msebBillAmount = msebBillAmount;
 		this.invoiceAmount = invoiceAmount;
+		this.referral = referral;
+		this.referralPercentage = referral == null ? null : referral.getReferralPercentage();
+		this.incentiveAmount = incentiveAmount;
+		this.otherChargesAmount = otherChargesAmount;
+	}
+
+	public void addOtherCharge(OtherChargeReason reason, BigDecimal amount) {
+		this.otherCharges.add(new MsedclInvoiceOtherCharge(this, reason, amount));
+	}
+
+	public void applySavings(BigDecimal totalConsumptionUnits, BigDecimal withoutSolarBillAmount,
+			BigDecimal withSolarBillAmount, BigDecimal consumerSavingsAmount) {
+		this.totalConsumptionUnits = totalConsumptionUnits;
+		this.withoutSolarBillAmount = withoutSolarBillAmount;
+		this.withSolarBillAmount = withSolarBillAmount;
+		this.consumerSavingsAmount = consumerSavingsAmount;
 	}
 
 	public void assignInvoiceNo(String invoiceNo) {
@@ -229,6 +282,17 @@ public class MsedclInvoice {
 		reversal.solarAmount = this.solarAmount.negate();
 		reversal.msebBillAmount = this.msebBillAmount.negate();
 		reversal.invoiceAmount = this.invoiceAmount.negate();
+		reversal.referral = this.referral;
+		reversal.referralPercentage = this.referralPercentage;
+		reversal.incentiveAmount = this.incentiveAmount.negate();
+		reversal.otherChargesAmount = this.otherChargesAmount.negate();
+		reversal.totalConsumptionUnits = this.totalConsumptionUnits;
+		reversal.withoutSolarBillAmount = this.withoutSolarBillAmount == null ? null : this.withoutSolarBillAmount.negate();
+		reversal.withSolarBillAmount = this.withSolarBillAmount == null ? null : this.withSolarBillAmount.negate();
+		reversal.consumerSavingsAmount = this.consumerSavingsAmount == null ? null : this.consumerSavingsAmount.negate();
+		for (MsedclInvoiceOtherCharge charge : this.otherCharges) {
+			reversal.addOtherCharge(charge.getReason(), charge.getAmount().negate());
+		}
 		return reversal;
 }
 

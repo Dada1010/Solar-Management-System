@@ -27,6 +27,7 @@ public interface InvoiceService {
 	List<InvoicePaymentResponse> addPayment(String requestingEmail, Long invoiceId, InvoicePaymentRequest request);
 	void cancelPayment(String requestingEmail, Long invoiceId, Long paymentId);
 	boolean hasInvoicesForDetail(Long detailId);
+	boolean hasInvoicesForReferral(Long referralId);
 
 	record InvoiceAttachmentDownload(Resource resource, String fileName, String contentType) {}
 }

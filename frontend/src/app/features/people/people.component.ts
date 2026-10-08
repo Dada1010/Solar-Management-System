@@ -56,7 +56,8 @@ export class PeopleComponent implements OnDestroy {
 		this.routeSubscription = this.route.data.subscribe((data) => {
 			this.employeeType = data['employeeType'] as EmployeeType;
 			this.selfOnly = this.employeeType === 'CUSTOMER' && this.auth.user?.role === 'CUSTOMER';
-			this.title = this.selfOnly ? 'Customer Details' : this.employeeType === 'CUSTOMER' ? 'Customers' : 'Employees';
+			this.title = this.selfOnly ? 'Customer Details' : this.employeeType === 'CUSTOMER' ? 'Customers'
+				: this.employeeType === 'REFERRAL' ? 'Referrals' : 'Employees';
 			this.page = 0;
 			this.nameFilter = '';
 			this.loadPage();
@@ -64,7 +65,15 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	get filterLabel(): string {
-		return this.employeeType === 'CUSTOMER' ? 'Filter by customer name' : 'Filter by employee name';
+		return `Filter by ${this.personLabel} name`;
+	}
+
+	get personLabel(): string {
+		return this.employeeType === 'CUSTOMER' ? 'customer' : this.employeeType === 'REFERRAL' ? 'referral' : 'employee';
+	}
+
+	get isReferral(): boolean {
+		return this.employeeType === 'REFERRAL';
 	}
 
 	get canWrite(): boolean {
@@ -201,7 +210,7 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	removePerson(person: EmployeeRecord): void {
-		const label = this.employeeType === 'CUSTOMER' ? 'customer' : 'employee';
+		const label = this.personLabel;
 		if (!this.canDelete || !window.confirm(`Delete ${label} ${person.firstName} ${person.lastName}?`)) return;
 		this.api.deleteEmployee(person.id).subscribe({
 			next: () => {
@@ -213,7 +222,7 @@ export class PeopleComponent implements OnDestroy {
 	}
 
 	resetPassword(person: EmployeeRecord): void {
-		const label = this.employeeType === 'CUSTOMER' ? 'customer' : 'employee';
+		const label = this.personLabel;
 		if (!this.canDelete || !window.confirm(`Reset the password for ${person.firstName} ${person.lastName}? They must change it after signing in.`)) return;
 		this.api.resetEmployeePassword(person.id).subscribe({
 			next: (result) => this.messages.add({ severity: 'success', summary: 'Password reset',
@@ -228,8 +237,11 @@ export class PeopleComponent implements OnDestroy {
 			this.peopleActionItems.push({ label: 'Update', icon: 'pi pi-pencil', command: () => this.edit(person) });
 		}
 		if (this.canDelete) {
+			if (!this.isReferral) {
+				this.peopleActionItems.push(
+					{ label: 'Reset Password', icon: 'pi pi-key', command: () => this.resetPassword(person) });
+			}
 			this.peopleActionItems.push(
-				{ label: 'Reset Password', icon: 'pi pi-key', command: () => this.resetPassword(person) },
 				{ label: 'Delete', icon: 'pi pi-trash', command: () => this.removePerson(person) }
 			);
 		}

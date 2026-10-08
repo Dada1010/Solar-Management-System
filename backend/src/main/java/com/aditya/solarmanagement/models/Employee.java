@@ -1,5 +1,7 @@
 package com.aditya.solarmanagement.models;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -26,7 +28,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Employee {
-	public enum EmployeeType { CUSTOMER, COMPANY_EMPLOYEE }
+	public enum EmployeeType { CUSTOMER, COMPANY_EMPLOYEE, REFERRAL }
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,6 +68,9 @@ public class Employee {
 	@Column(nullable = false)
 	private boolean active = true;
 
+	@Column(name = "referral_percentage", precision = 5, scale = 2)
+	private BigDecimal referralPercentage;
+
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "branch_id", nullable = false)
 	private Branch branch;
@@ -75,7 +80,8 @@ public class Employee {
 	private List<MsedclDetail> msedclDetails = new ArrayList<>();
 
 	public Employee(String firstName, String lastName, String address, String mobileNo, String emailAddress,
-			String passwordHash, EmployeeType employeeType, EmployeeRole role, Branch branch) {
+			String passwordHash, EmployeeType employeeType, EmployeeRole role, Branch branch,
+			BigDecimal referralPercentage) {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.address = address;
@@ -85,10 +91,12 @@ public class Employee {
 		this.employeeType = employeeType;
 		this.role = role;
 		this.branch = branch;
+		applyReferralSettings(employeeType, referralPercentage);
 	}
 
 	public void updateDetails(String firstName, String lastName, String address, String mobileNo,
-			String emailAddress, EmployeeType employeeType, EmployeeRole role, Branch branch) {
+			String emailAddress, EmployeeType employeeType, EmployeeRole role, Branch branch,
+			BigDecimal referralPercentage) {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.address = address;
@@ -97,6 +105,14 @@ public class Employee {
 		this.employeeType = employeeType;
 		this.role = role;
 		this.branch = branch;
+		applyReferralSettings(employeeType, referralPercentage);
+	}
+
+	// Referral partners earn incentives but never sign in.
+	private void applyReferralSettings(EmployeeType employeeType, BigDecimal referralPercentage) {
+		boolean referral = employeeType == EmployeeType.REFERRAL;
+		this.referralPercentage = referral ? referralPercentage : null;
+		this.active = !referral;
 	}
 
 	public void replaceMsedclDetails(List<MsedclDetail> details) {

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="025-add-referral-and-other-charges" author="aditya">
+		<addColumn tableName="employees">
+			<column name="referral_percentage" type="DECIMAL(5,2)"/>
+		</addColumn>
+		<addColumn tableName="customer_msedcl_details">
+			<column name="referral_id" type="BIGINT"/>
+		</addColumn>
+		<addForeignKeyConstraint baseTableName="customer_msedcl_details" baseColumnNames="referral_id"
+			referencedTableName="employees" referencedColumnNames="id" constraintName="fk_msedcl_detail_referral"/>
+		<createTable tableName="other_charge_reasons">
+			<column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" primaryKeyName="pk_other_charge_reasons" nullable="false"/></column>
+			<column name="name" type="VARCHAR(100)"><constraints nullable="false" unique="true" uniqueConstraintName="uk_other_charge_reason_name"/></column>
+		</createTable>
+		<addColumn tableName="msedcl_invoices">
+			<column name="referral_id" type="BIGINT"/>
+			<column name="referral_percentage" type="DECIMAL(5,2)"/>
+			<column name="incentive_amount" type="DECIMAL(14,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+			<column name="other_charges_amount" type="DECIMAL(14,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+		</addColumn>
+		<addForeignKeyConstraint baseTableName="msedcl_invoices" baseColumnNames="referral_id"
+			referencedTableName="employees" referencedColumnNames="id" constraintName="fk_invoice_referral"/>
+		<createTable tableName="msedcl_invoice_other_charges">
+			<column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" primaryKeyName="pk_msedcl_invoice_other_charges" nullable="false"/></column>
+			<column name="invoice_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_invoice_other_charge_invoice" references="msedcl_invoices(id)"/></column>
+			<column name="reason_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_invoice_other_charge_reason" references="other_charge_reasons(id)"/></column>
+			<column name="reason_name_snapshot" type="VARCHAR(100)"><constraints nullable="false"/></column>
+			<column name="amount" type="DECIMAL(14,2)"><constraints nullable="false"/></column>
+		</createTable>
+	</changeSet>
+</databaseChangeLog>

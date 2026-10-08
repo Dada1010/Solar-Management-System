@@ -15,6 +15,8 @@
         <a routerLink="/branches" routerLinkActive="current"><i class="pi pi-map-marker"></i><span>Branch</span><i class="pi pi-angle-right nav-arrow"></i></a>
         <a routerLink="/employees" routerLinkActive="current"><i class="pi pi-users"></i><span>Employee</span><i class="pi pi-angle-right nav-arrow"></i></a>
         <a routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer</span><i class="pi pi-angle-right nav-arrow"></i></a>
+        <a routerLink="/referrals" routerLinkActive="current"><i class="pi pi-share-alt"></i><span>Referral</span><i class="pi pi-angle-right nav-arrow"></i></a>
+        <a routerLink="/other-charges" routerLinkActive="current"><i class="pi pi-percentage"></i><span>Reason / Other Charges</span><i class="pi pi-angle-right nav-arrow"></i></a>
       </ng-container>
       <a *ngIf="auth.user?.role === 'CUSTOMER'" routerLink="/customers" routerLinkActive="current"><i class="pi pi-user"></i><span>Customer Details</span><i class="pi pi-angle-right nav-arrow"></i></a>
       <a routerLink="/consumer-details" routerLinkActive="current"><i class="pi pi-bolt"></i><span>Consumer Details</span><i class="pi pi-angle-right nav-arrow"></i></a>

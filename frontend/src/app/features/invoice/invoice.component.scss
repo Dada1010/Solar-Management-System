@@ -20,6 +20,10 @@
 .solar-units > div { display: grid; gap: 7px; min-height: 62px; align-content: center; padding: 8px 11px; border-radius: 5px; background: #f3f6f1; color: #587167; font-size: 10px; }
 .solar-units strong { color: #274b3e; font-size: 13px; }
 .mseb-amount { max-width: 360px; }
+.charge-picker { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+.charge-rows { display: grid; gap: 8px; margin-top: 12px; }
+.charge-row { display: grid; grid-template-columns: minmax(0, 1fr) 180px auto; align-items: end; gap: 12px; padding: 10px 12px; border: 1px solid #e5ebe3; border-radius: 6px; background: #f8faf7; }
+.charge-row strong { align-self: center; color: #315548; font-size: 12px; }
 .invoice-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 9px; }
 .invoice-preview { margin-top: 18px; padding: 15px; border-left: 3px solid #6e9d7c; background: #f3f7f0; }
 .preview-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #36594b; }
@@ -76,4 +80,4 @@
 .print-emphasis { font-weight: 700; background: #f2f6f1; }
 .print-total { font-size: 13px; font-weight: 700; background: #eaf1e8; }
 .invoice-print footer { margin-top: 22px; padding-top: 9px; border-top: 1px solid #c9d4cc; color: #62756d; font-size: 9px; text-align: center; }
-@media (max-width: 760px) { .invoice-editor { padding: 15px; } .invoice-form, .payment-form { grid-template-columns: 1fr; } .reading-section, .invoice-actions { grid-column: auto; } .reading-grid, .solar-units, .payment-summary { grid-template-columns: 1fr; } .invoice-actions { flex-wrap: wrap; } }
+@media (max-width: 760px) { .invoice-editor { padding: 15px; } .invoice-form, .payment-form { grid-template-columns: 1fr; } .reading-section, .invoice-actions { grid-column: auto; } .reading-grid, .solar-units, .payment-summary { grid-template-columns: 1fr; } .charge-picker, .charge-row { grid-template-columns: 1fr; } .invoice-actions { flex-wrap: wrap; } }

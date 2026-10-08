@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="026-add-effective-rate-slabs" author="aditya">
+		<createTable tableName="effective_rate_slabs">
+			<column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" primaryKeyName="pk_effective_rate_slabs" nullable="false"/></column>
+			<column name="effective_rate_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_effective_rate_slab_rate" references="effective_rates(id)" deleteCascade="true"/></column>
+			<column name="up_to_units" type="DECIMAL(14,4)"/>
+			<column name="rate_per_unit" type="DECIMAL(12,4)"><constraints nullable="false"/></column>
+			<column name="adjustment_per_unit" type="DECIMAL(12,4)"><constraints nullable="false"/></column>
+		</createTable>
+		<createTable tableName="msedcl_invoice_slab_lines">
+			<column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" primaryKeyName="pk_msedcl_invoice_slab_lines" nullable="false"/></column>
+			<column name="invoice_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_invoice_slab_line_invoice" references="msedcl_invoices(id)"/></column>
+			<column name="from_units" type="DECIMAL(14,4)"><constraints nullable="false"/></column>
+			<column name="up_to_units" type="DECIMAL(14,4)"/>
+			<column name="units" type="DECIMAL(14,4)"><constraints nullable="false"/></column>
+			<column name="rate_per_unit" type="DECIMAL(12,4)"><constraints nullable="false"/></column>
+			<column name="adjustment_per_unit" type="DECIMAL(12,4)"><constraints nullable="false"/></column>
+			<column name="amount" type="DECIMAL(14,2)"><constraints nullable="false"/></column>
+		</createTable>
+	</changeSet>
+</databaseChangeLog>

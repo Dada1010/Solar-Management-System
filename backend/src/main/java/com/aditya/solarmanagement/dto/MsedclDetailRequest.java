@@ -20,7 +20,8 @@ public record MsedclDetailRequest(
 		@NotBlank @Size(max = 50) String consumerNo,
 		@NotNull @DecimalMin("0.0") @Digits(integer = 8, fraction = 4) BigDecimal ratePerUnit,
 		@NotNull MsedclChargeType chargeType,
-		@NotNull @Min(0) @Max(365) Integer dueDays) {
+		@NotNull @Min(0) @Max(365) Integer dueDays,
+		Long referralId) {
 	public MsedclDetailRequest {
 		if (chargeType == null) {
 			chargeType = MsedclChargeType.ONLY_SOLAR_GENERATION;

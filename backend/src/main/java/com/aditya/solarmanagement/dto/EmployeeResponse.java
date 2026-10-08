@@ -3,6 +3,8 @@ package com.aditya.solarmanagement.dto;
 import com.aditya.solarmanagement.models.Employee.EmployeeType;
 import com.aditya.solarmanagement.models.EmployeeRole;
 
+import java.math.BigDecimal;
+
 public record EmployeeResponse(
 		Long id,
 		Long companyId,
@@ -15,5 +17,6 @@ public record EmployeeResponse(
 		String emailAddress,
 		EmployeeType employeeType,
 		EmployeeRole role,
-		boolean mustChangePassword) {
+		boolean mustChangePassword,
+		BigDecimal referralPercentage) {
 }

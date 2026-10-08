@@ -2,7 +2,9 @@ package com.aditya.solarmanagement.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
@@ -18,5 +20,9 @@ public record MsedclInvoiceRequest(
 		@NotNull @DecimalMin("0.0") @Digits(integer = 10, fraction = 4) BigDecimal generationCurrent,
 		@NotNull @DecimalMin("0.0") @Digits(integer = 10, fraction = 4) BigDecimal generationPrevious,
 		@NotNull @DecimalMin("0.0") @Digits(integer = 10, fraction = 4) BigDecimal previousBankUnits,
-		@DecimalMin("0.0") @Digits(integer = 12, fraction = 2) BigDecimal msebBillAmount) {
+		@DecimalMin("0.0") @Digits(integer = 12, fraction = 2) BigDecimal msebBillAmount,
+		@Valid List<InvoiceOtherChargeRequest> otherCharges) {
+	public MsedclInvoiceRequest {
+		otherCharges = otherCharges == null ? List.of() : List.copyOf(otherCharges);
+	}
 }
