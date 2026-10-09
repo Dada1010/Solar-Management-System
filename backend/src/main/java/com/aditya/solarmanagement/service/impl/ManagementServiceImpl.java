@@ -398,7 +398,8 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
 		}
 		MsedclDetail detail = new MsedclDetail(request.billingUnit().trim(), request.name().trim(),
-				request.mobileNo().trim(), consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays(),
+				request.mobileNo().trim(), consumerNo, request.ratePerUnit(), request.electricityDutyApplicable(),
+				request.electricityDutyPercent(), request.chargeType(), request.dueDays(),
 				referralFor(request.referralId()));
 		customer.addMsedclDetail(detail);
 		employees.save(customer);
@@ -439,7 +440,8 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This consumer number is already in use");
 		}
 		detail.updateDetails(request.billingUnit().trim(), request.name().trim(), request.mobileNo().trim(),
-				consumerNo, request.ratePerUnit(), request.chargeType(), request.dueDays(),
+				consumerNo, request.ratePerUnit(), request.electricityDutyApplicable(), request.electricityDutyPercent(),
+				request.chargeType(), request.dueDays(),
 				referralFor(request.referralId()));
 		logger.info("Updated MSEDCL detail id={} for customer id={}", detail.getId(), customerId);
 		return msedclDetailResponse(detail);
@@ -493,7 +495,8 @@ public class ManagementServiceImpl implements ManagementService {
 		return new MsedclDetailResponse(detail.getId(), detail.getCustomer().getId(), branch.getCompany().getId(),
 				branch.getId(), branch.getName(),
 				detail.getBillingUnit(), detail.getName(), detail.getMobileNo(), detail.getConsumerNo(),
-				detail.getRatePerUnit(), detail.getLastInvoiceNo(), detail.getDueDays(), detail.getChargeType(),
+				detail.getRatePerUnit(), detail.isElectricityDutyApplicable(), detail.getElectricityDutyPercent(),
+				detail.getLastInvoiceNo(), detail.getDueDays(), detail.getChargeType(),
 				detail.getReferral() == null ? null : detail.getReferral().getId(),
 				detail.getReferral() == null ? null
 						: detail.getReferral().getFirstName() + " " + detail.getReferral().getLastName());
@@ -536,7 +539,7 @@ public class ManagementServiceImpl implements ManagementService {
 		EffectiveRate rate = new EffectiveRate(request.startDate(), request.ratePerUnit(), owner.company(), owner.branch(),
 				owner.msedclDetail());
 		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
-				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
+				request.taxOnSalePaisePerUnit());
 		EffectiveRate saved = effectiveRates.save(rate);
 		logger.info("Added effective rate id={} ownerType={} ownerId={}", saved.getId(), ownerType, ownerId);
 		return effectiveRateResponse(saved);
@@ -555,7 +558,7 @@ public class ManagementServiceImpl implements ManagementService {
 		}
 		rate.updateDetails(request.startDate(), request.ratePerUnit());
 		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
-				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
+				request.taxOnSalePaisePerUnit());
 		logger.info("Updated effective rate id={} ownerType={} ownerId={}", rateId, ownerType, ownerId);
 		return effectiveRateResponse(rate);
 	}
@@ -714,8 +717,7 @@ public class ManagementServiceImpl implements ManagementService {
 
 	private EffectiveRateResponse effectiveRateResponse(EffectiveRate rate) {
 		return new EffectiveRateResponse(rate.getId(), rate.getStartDate(), rate.getRatePerUnit(),
-				rate.getFixedCharge(), rate.getWheelingChargePerUnit(), rate.getElectricityDutyPercent(),
-				rate.getTaxOnSalePaisePerUnit());
+				rate.getFixedCharge(), rate.getWheelingChargePerUnit(), rate.getTaxOnSalePaisePerUnit());
 	}
 
 	private record RateOwner(EffectiveRateOwnerType ownerType, Company company, Branch branch, MsedclDetail msedclDetail) {}

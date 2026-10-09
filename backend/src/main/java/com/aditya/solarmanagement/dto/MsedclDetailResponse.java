@@ -15,6 +15,8 @@ public record MsedclDetailResponse(
 		String mobileNo,
 		String consumerNo,
 		BigDecimal ratePerUnit,
+		boolean electricityDutyApplicable,
+		BigDecimal electricityDutyPercent,
 		String lastInvoiceNo,
 		int dueDays,
 		MsedclChargeType chargeType,

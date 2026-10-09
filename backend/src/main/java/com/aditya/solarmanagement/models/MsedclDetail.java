@@ -44,6 +44,12 @@ public class MsedclDetail {
 	@Column(name = "rate_per_unit", nullable = false, precision = 12, scale = 4)
 	private BigDecimal ratePerUnit;
 
+	@Column(name = "electricity_duty_applicable", nullable = false)
+	private boolean electricityDutyApplicable;
+
+	@Column(name = "electricity_duty_percent", nullable = false, precision = 5, scale = 2)
+	private BigDecimal electricityDutyPercent = BigDecimal.ZERO;
+
 	@Column(name = "last_invoice_no", length = 160)
 	private String lastInvoiceNo;
 
@@ -63,24 +69,30 @@ public class MsedclDetail {
 	private Employee referral;
 
 	public MsedclDetail(String billingUnit, String name, String mobileNo, String consumerNo, BigDecimal ratePerUnit,
-			MsedclChargeType chargeType, int dueDays, Employee referral) {
+			boolean electricityDutyApplicable, BigDecimal electricityDutyPercent, MsedclChargeType chargeType,
+			int dueDays, Employee referral) {
 		this.billingUnit = billingUnit;
 		this.name = name;
 		this.mobileNo = mobileNo;
 		this.consumerNo = consumerNo;
 		this.ratePerUnit = ratePerUnit;
+		this.electricityDutyApplicable = electricityDutyApplicable;
+		this.electricityDutyPercent = electricityDutyPercent == null ? BigDecimal.ZERO : electricityDutyPercent;
 		this.chargeType = chargeType == null ? MsedclChargeType.ONLY_SOLAR_GENERATION : chargeType;
 		this.dueDays = dueDays;
 		this.referral = referral;
 	}
 
 	public void updateDetails(String billingUnit, String name, String mobileNo, String consumerNo,
-			BigDecimal ratePerUnit, MsedclChargeType chargeType, int dueDays, Employee referral) {
+			BigDecimal ratePerUnit, boolean electricityDutyApplicable, BigDecimal electricityDutyPercent,
+			MsedclChargeType chargeType, int dueDays, Employee referral) {
 		this.billingUnit = billingUnit;
 		this.name = name;
 		this.mobileNo = mobileNo;
 		this.consumerNo = consumerNo;
 		this.ratePerUnit = ratePerUnit;
+		this.electricityDutyApplicable = electricityDutyApplicable;
+		this.electricityDutyPercent = electricityDutyPercent == null ? BigDecimal.ZERO : electricityDutyPercent;
 		this.chargeType = chargeType == null ? MsedclChargeType.ONLY_SOLAR_GENERATION : chargeType;
 		this.dueDays = dueDays;
 		this.referral = referral;

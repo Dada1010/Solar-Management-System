@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="032-add-consumer-electricity-duty-settings" author="aditya">
+		<addColumn tableName="customer_msedcl_details">
+			<column name="electricity_duty_applicable" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+			<column name="electricity_duty_percent" type="DECIMAL(5,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+		</addColumn>
+		<addColumn tableName="msedcl_invoices">
+			<column name="electricity_duty_applicable" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+		</addColumn>
+		<sql>UPDATE msedcl_invoices SET electricity_duty_applicable = CASE WHEN electricity_duty_percent &gt; 0 THEN 1 ELSE 0 END</sql>
+	</changeSet>
+</databaseChangeLog>

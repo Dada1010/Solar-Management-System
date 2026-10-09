@@ -43,6 +43,7 @@ public record MsedclInvoiceResponse(
 		String rateSource,
 		BigDecimal configuredRatePerUnit,
 		BigDecimal slabAverageRatePerUnit,
+		boolean electricityDutyApplicable,
 		BigDecimal electricityDutyPercent,
 		BigDecimal electricityDutyAmount,
 		BigDecimal solarAmount,

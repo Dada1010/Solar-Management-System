@@ -138,6 +138,9 @@ public class MsedclInvoice {
 	@Column(name = "slab_average_rate_per_unit", precision = 12, scale = 4)
 	private BigDecimal slabAverageRatePerUnit;
 
+	@Column(name = "electricity_duty_applicable", nullable = false)
+	private boolean electricityDutyApplicable;
+
 	@Column(name = "electricity_duty_percent", nullable = false, precision = 5, scale = 2)
 	private BigDecimal electricityDutyPercent;
 
@@ -205,7 +208,8 @@ public class MsedclInvoice {
 			BigDecimal previousBankUnits, BigDecimal solarOffsetUnits, BigDecimal bankSolarUnits,
 			BigDecimal solarBillUnits,
 			BigDecimal ratePerUnit, String rateSource, BigDecimal configuredRatePerUnit,
-			BigDecimal slabAverageRatePerUnit, BigDecimal electricityDutyPercent, BigDecimal electricityDutyAmount,
+			BigDecimal slabAverageRatePerUnit, boolean electricityDutyApplicable, BigDecimal electricityDutyPercent,
+			BigDecimal electricityDutyAmount,
 			BigDecimal solarAmount, BigDecimal msebBillAmount,
 			BigDecimal invoiceAmount, Employee referral, BigDecimal incentiveAmount, BigDecimal otherChargesAmount) {
 		this.msedclDetail = detail;
@@ -237,6 +241,7 @@ public class MsedclInvoice {
 		this.rateSource = rateSource;
 		this.configuredRatePerUnit = configuredRatePerUnit;
 		this.slabAverageRatePerUnit = slabAverageRatePerUnit;
+		this.electricityDutyApplicable = electricityDutyApplicable;
 		this.electricityDutyPercent = electricityDutyPercent;
 		this.electricityDutyAmount = electricityDutyAmount;
 		this.solarAmount = solarAmount;
@@ -303,6 +308,7 @@ public class MsedclInvoice {
 		reversal.rateSource = this.rateSource;
 		reversal.configuredRatePerUnit = this.configuredRatePerUnit;
 		reversal.slabAverageRatePerUnit = this.slabAverageRatePerUnit;
+		reversal.electricityDutyApplicable = this.electricityDutyApplicable;
 		reversal.electricityDutyPercent = this.electricityDutyPercent;
 		reversal.electricityDutyAmount = this.electricityDutyAmount.negate();
 		reversal.solarAmount = this.solarAmount.negate();

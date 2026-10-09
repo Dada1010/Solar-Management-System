@@ -362,6 +362,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 		BigDecimal bankSolarUnits = availableSolarUnits.subtract(importConsumption).max(BigDecimal.ZERO);
 		BigDecimal solarBillUnits = generationConsumption.add(request.previousBankUnits()).subtract(bankSolarUnits);
 		ResolvedRate configuredRate = resolveRate(detail, request.billingDate());
+		BigDecimal electricityDutyPercent = detail.isElectricityDutyApplicable()
+				? detail.getElectricityDutyPercent() : BigDecimal.ZERO;
 		BigDecimal directSolarUnits = generationConsumption.subtract(exportConsumption).max(BigDecimal.ZERO);
 		BigDecimal totalUnits = directSolarUnits.add(importConsumption);
 		EffectiveSlabSchedule slabSchedule = resolveSlabSchedule(detail, request.billingDate());
@@ -371,7 +373,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 		String selectedRateSource = slabAverageApplied ? "SLAB_AVERAGE" : configuredRate.source();
 		BigDecimal solarAmount = solarBillUnits.multiply(selectedRate).setScale(2, RoundingMode.HALF_UP);
 		BigDecimal electricityDutyAmount = InvoiceRateCalculator.electricityDuty(solarAmount,
-				configuredRate.electricityDutyPercent());
+				electricityDutyPercent);
 		BigDecimal msebBillAmount = BigDecimal.ZERO.setScale(2);
 		if (detail.getChargeType() == MsedclChargeType.SOLAR_PLUS_MSEB_BILL_AMOUNT) {
 			if (request.msebBillAmount() == null) {
@@ -405,7 +407,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 				request.importPrevious(), importConsumption, request.exportCurrent(), request.exportPrevious(),
 				exportConsumption, request.generationCurrent(), request.generationPrevious(), generationConsumption,
 				request.previousBankUnits(), solarOffsetUnits, bankSolarUnits, solarBillUnits, selectedRate, selectedRateSource,
-				configuredRate.ratePerUnit(), slabAverageRate, configuredRate.electricityDutyPercent(), electricityDutyAmount,
+				configuredRate.ratePerUnit(), slabAverageRate, detail.isElectricityDutyApplicable(), electricityDutyPercent,
+				electricityDutyAmount,
 				solarAmount, msebBillAmount, invoiceAmount, referral, incentiveAmount, otherChargesAmount);
 		for (ChargeLine line : chargeLines) {
 			invoice.addOtherCharge(line.reason(), line.amount());
@@ -422,7 +425,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 			BigDecimal savings = withoutSolar.totalAmount().subtract(withSolar);
 			InvoiceSavingsDetails details = new InvoiceSavingsDetails(directSolarUnits, importConsumption, totalUnits,
 					netGridUnits, withoutSolar, withSolarGrid, gridAmount, gridAmountEntered, solarBillUnits,
-				selectedRate, solarAmount, configuredRate.electricityDutyPercent(), electricityDutyAmount);
+				selectedRate, solarAmount, electricityDutyPercent, electricityDutyAmount);
 			invoice.applySavings(totalUnits, withoutSolar.totalAmount(), withSolar, savings, toJson(details));
 		}
 		return invoice;
@@ -526,37 +529,19 @@ public class InvoiceServiceImpl implements InvoiceService {
 	private ResolvedRate resolveRate(MsedclDetail detail, LocalDate billingDate) {
 		EffectiveRate detailRate = effectiveRates.findAllByMsedclDetail_IdOrderByStartDateDescIdDesc(detail.getId())
 				.stream().filter(rate -> !rate.getStartDate().isAfter(billingDate)).findFirst().orElse(null);
-		if (detailRate != null) return new ResolvedRate(detailRate.getRatePerUnit(), "DETAIL_EFFECTIVE",
-				detailRate.getElectricityDutyPercent());
+		if (detailRate != null) return new ResolvedRate(detailRate.getRatePerUnit(), "DETAIL_EFFECTIVE");
 		if (detail.getRatePerUnit().compareTo(BigDecimal.ZERO) > 0) {
-			return new ResolvedRate(detail.getRatePerUnit(), "DETAIL_BASE",
-					resolveElectricityDutyPercent(detail, billingDate));
+			return new ResolvedRate(detail.getRatePerUnit(), "DETAIL_BASE");
 		}
 		Branch branch = detail.getCustomer().getBranch();
 		EffectiveRate branchRate = effectiveRates.findAllByBranch_IdOrderByStartDateDescIdDesc(branch.getId())
 				.stream().filter(rate -> !rate.getStartDate().isAfter(billingDate)).findFirst().orElse(null);
-		if (branchRate != null) return new ResolvedRate(branchRate.getRatePerUnit(), "BRANCH_EFFECTIVE",
-				branchRate.getElectricityDutyPercent());
+		if (branchRate != null) return new ResolvedRate(branchRate.getRatePerUnit(), "BRANCH_EFFECTIVE");
 		EffectiveRate companyRate = effectiveRates.findAllByCompany_IdOrderByStartDateDescIdDesc(branch.getCompany().getId())
 				.stream().filter(rate -> !rate.getStartDate().isAfter(billingDate)).findFirst().orElse(null);
-		if (companyRate != null) return new ResolvedRate(companyRate.getRatePerUnit(), "COMPANY_EFFECTIVE",
-				companyRate.getElectricityDutyPercent());
+		if (companyRate != null) return new ResolvedRate(companyRate.getRatePerUnit(), "COMPANY_EFFECTIVE");
 		throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 				"No effective rate is configured for this billing date");
-	}
-
-	private BigDecimal resolveElectricityDutyPercent(MsedclDetail detail, LocalDate billingDate) {
-		Branch branch = detail.getCustomer().getBranch();
-		List<List<EffectiveRate>> candidates = List.of(
-			effectiveRates.findAllByMsedclDetail_IdOrderByStartDateDescIdDesc(detail.getId()),
-			effectiveRates.findAllByBranch_IdOrderByStartDateDescIdDesc(branch.getId()),
-			effectiveRates.findAllByCompany_IdOrderByStartDateDescIdDesc(branch.getCompany().getId()));
-		for (List<EffectiveRate> rates : candidates) {
-			EffectiveRate current = rates.stream().filter(rate -> !rate.getStartDate().isAfter(billingDate))
-					.findFirst().orElse(null);
-			if (current != null) return current.getElectricityDutyPercent();
-		}
-		return BigDecimal.ZERO;
 	}
 
 	private MsedclInvoiceResponse invoiceResponse(MsedclInvoice invoice) {
@@ -586,8 +571,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 				invoice.getGenerationCurrent(), invoice.getGenerationPrevious(), invoice.getGenerationConsumption(),
 				invoice.getPreviousBankUnits(), invoice.getSolarOffsetUnits(), invoice.getBankSolarUnits(),
 				invoice.getSolarBillUnits(), invoice.getRatePerUnit(), invoice.getRateSource(),
-				invoice.getConfiguredRatePerUnit(), invoice.getSlabAverageRatePerUnit(), invoice.getElectricityDutyPercent(),
-				invoice.getElectricityDutyAmount(), invoice.getSolarAmount(), invoice.getMsebBillAmount(),
+				invoice.getConfiguredRatePerUnit(), invoice.getSlabAverageRatePerUnit(),
+				invoice.isElectricityDutyApplicable(), invoice.getElectricityDutyPercent(), invoice.getElectricityDutyAmount(),
+				invoice.getSolarAmount(), invoice.getMsebBillAmount(),
 				invoice.getOtherChargesAmount(), otherCharges,
 				invoice.getInvoiceAmount(), paidAmount, balanceAmount, invoice.getMsebBillFileName(),
 				invoice.getMsebBillUploadedAt(), referral, invoice.getTotalConsumptionUnits(),
@@ -620,7 +606,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account not found"));
 	}
 
-	private record ResolvedRate(BigDecimal ratePerUnit, String source, BigDecimal electricityDutyPercent) {}
+	private record ResolvedRate(BigDecimal ratePerUnit, String source) {}
 
 	private record ReferralMonthKey(Long referralId, String referralName, YearMonth month) {}
 
