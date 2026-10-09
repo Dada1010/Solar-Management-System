@@ -41,16 +41,16 @@ class InvoiceRateCalculatorTest {
 	}
 
 	@Test
-	void includesFuelAdjustmentAndFixedChargeInGridDutyBase() {
+	void excludesFixedChargeFromGridDutyBase() {
 		BigDecimal fuelAdjustment = InvoiceRateCalculator.fuelAdjustment(new BigDecimal("100"),
 				new BigDecimal("0.30")).add(InvoiceRateCalculator.fuelAdjustment(new BigDecimal("125"),
 						new BigDecimal("0.50")));
 		assertEquals(0, new BigDecimal("92.50").compareTo(fuelAdjustment));
 
-		BigDecimal dutyBase = InvoiceRateCalculator.tariffDutyBase(new BigDecimal("140.00"),
-				new BigDecimal("1815.50"), new BigDecimal("330.75"), fuelAdjustment);
-		assertEquals(0, new BigDecimal("2378.75").compareTo(dutyBase));
-		assertEquals(0, new BigDecimal("380.60").compareTo(
+		BigDecimal dutyBase = InvoiceRateCalculator.tariffDutyBase(new BigDecimal("1815.50"),
+				new BigDecimal("330.75"), fuelAdjustment);
+		assertEquals(0, new BigDecimal("2238.75").compareTo(dutyBase));
+		assertEquals(0, new BigDecimal("358.20").compareTo(
 				InvoiceRateCalculator.electricityDuty(dutyBase, new BigDecimal("16"))));
 	}
 

@@ -519,11 +519,11 @@ public class InvoiceServiceImpl implements InvoiceService {
 		BigDecimal taxRate = tariff == null ? BigDecimal.ZERO : tariff.getTaxOnSalePaisePerUnit();
 		BigDecimal wheeling = billedUnits.multiply(wheelingRate).setScale(2, RoundingMode.HALF_UP);
 		BigDecimal fixed = tariff == null ? BigDecimal.ZERO.setScale(2) : tariff.getFixedCharge().setScale(2, RoundingMode.HALF_UP);
-		BigDecimal dutyBase = InvoiceRateCalculator.tariffDutyBase(fixed, bandTotal, wheeling, fuelAdjustment);
+		BigDecimal dutyBase = InvoiceRateCalculator.tariffDutyBase(bandTotal, wheeling, fuelAdjustment);
 		BigDecimal duty = InvoiceRateCalculator.electricityDuty(dutyBase, electricityDutyPercent);
 		BigDecimal taxOnSale = billedUnits.multiply(taxRate)
 				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-		BigDecimal total = dutyBase.add(duty).add(taxOnSale).setScale(2, RoundingMode.HALF_UP);
+		BigDecimal total = fixed.add(dutyBase).add(duty).add(taxOnSale).setScale(2, RoundingMode.HALF_UP);
 		return new TariffBillDetails(billedUnits, bands, fixed, wheelingRate, wheeling, fuelAdjustment,
 				electricityDutyPercent, duty, taxRate, taxOnSale, total);
 	}

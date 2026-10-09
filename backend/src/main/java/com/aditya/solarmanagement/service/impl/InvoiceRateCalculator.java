@@ -42,8 +42,8 @@ final class InvoiceRateCalculator {
 		return units.multiply(adjustmentPerUnit).setScale(2, RoundingMode.HALF_UP);
 	}
 
-	static BigDecimal tariffDutyBase(BigDecimal fixedCharge, BigDecimal energyAmount, BigDecimal wheelingAmount,
+	static BigDecimal tariffDutyBase(BigDecimal energyAmount, BigDecimal wheelingAmount,
 			BigDecimal fuelAdjustmentAmount) {
-		return fixedCharge.add(energyAmount).add(wheelingAmount).add(fuelAdjustmentAmount);
+		return energyAmount.add(wheelingAmount).add(fuelAdjustmentAmount);
 	}
 }
