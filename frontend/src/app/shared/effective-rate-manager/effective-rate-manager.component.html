@@ -1,34 +1,47 @@
-<p-button label="Rates" icon="pi pi-chart-line" severity="secondary" [outlined]="true" (onClick)="open()"></p-button>
-<p-dialog [(visible)]="dialogVisible" [header]="'Effective rates' + (ownerName ? ' · ' + ownerName : '')" [modal]="true" [draggable]="false" appendTo="body" [style]="{ width: 'min(48rem, 96vw)' }" [contentStyle]="{ 'max-height': '72vh', overflow: 'auto' }">
-	<form *ngIf="canWrite" [formGroup]="form" (ngSubmit)="save()" class="rate-form">
-		<label>Start date<input pInputText type="date" formControlName="startDate"></label>
-		<label>Rate per unit<input pInputText type="number" min="0" step="0.0001" formControlName="ratePerUnit"></label>
-		<div class="slab-section">
-			<div class="slab-heading"><strong>MSEDCL tariff slabs (optional, used for consumer savings)</strong><p-button label="Add slab" icon="pi pi-plus" severity="secondary" [outlined]="true" type="button" (onClick)="addSlab()"></p-button></div>
-			<div class="slab-rows" formArrayName="slabs">
-				<div class="slab-row" *ngFor="let slab of slabRows.controls; let i = index; let isLast = last" [formGroupName]="i">
-					<label>{{ isLast ? 'Units above ' + slabStart(i) : 'Units from ' + slabStart(i) + ' up to' }}<input *ngIf="!isLast" pInputText type="number" min="0" step="0.01" formControlName="upToUnits"><input *ngIf="isLast" pInputText value="No limit" disabled></label>
-					<label>Rate per unit<input pInputText type="number" min="0" step="0.0001" formControlName="ratePerUnit"></label>
-					<label>Adjustment per unit<input pInputText type="number" min="0" step="0.0001" formControlName="adjustmentPerUnit"></label>
-					<p-button icon="pi pi-trash" [text]="true" severity="danger" type="button" aria-label="Remove slab" (onClick)="removeSlab(i)"></p-button>
-				</div>
-			</div>
-			<div class="tariff-charges">
-				<label>स्थिर आकार (₹ / महिना)<input pInputText type="number" min="0" step="0.01" formControlName="fixedCharge"></label>
-				<label>वहन आकार (₹ / युनिट)<input pInputText type="number" min="0" step="0.0001" formControlName="wheelingChargePerUnit"></label>
-				<label>वीज शुल्क (%)<input pInputText type="number" min="0" max="100" step="0.01" formControlName="electricityDutyPercent"></label>
-				<label>वीज विक्री कर (पैसे / युनिट)<input pInputText type="number" min="0" step="0.01" formControlName="taxOnSalePaisePerUnit"></label>
-			</div>
-		</div>
-		<div class="form-actions"><p-button *ngIf="editingId !== null" label="Cancel edit" severity="secondary" [outlined]="true" type="button" (onClick)="resetForm()"></p-button><p-button [label]="editingId === null ? 'Add rate' : 'Save changes'" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="form.invalid"></p-button></div>
-	</form>
-	<section class="rate-history" aria-label="Effective rate history">
-		<div class="rate-history-heading"><strong>Rate history</strong><span>{{ rates.length }} entries</span></div>
-		<div class="rate-loading" *ngIf="loading" role="status">Loading rates…</div>
-		<p-table *ngIf="!loading" appResponsiveTable [value]="rates" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '30rem' }">
-			<ng-template pTemplate="header"><tr><th>Start date</th><th>Rate per unit</th><th>Slabs</th><th *ngIf="canWrite || canDelete" class="rate-actions">Actions</th></tr></ng-template>
-			<ng-template pTemplate="body" let-rate><tr><td><span class="p-datatable-column-title">Start date</span>{{ rate.startDate }}</td><td><span class="p-datatable-column-title">Rate per unit</span>{{ rate.ratePerUnit | number:'1.2-4' }}</td><td><span class="p-datatable-column-title">Slabs</span>{{ rate.slabs.length ? slabSummary(rate) : '—' }}</td><td *ngIf="canWrite || canDelete" class="rate-actions"><span class="p-datatable-column-title">Actions</span><p-button *ngIf="canWrite" icon="pi pi-pencil" [text]="true" severity="secondary" aria-label="Edit effective rate" (onClick)="edit(rate)"></p-button><p-button *ngIf="canDelete" icon="pi pi-trash" [text]="true" severity="danger" aria-label="Remove effective rate" (onClick)="remove(rate)"></p-button></td></tr></ng-template>
+<p-button label="Rates and slabs" icon="pi pi-chart-line" severity="secondary" [outlined]="true" (onClick)="open()"></p-button>
+<p-dialog [(visible)]="dialogVisible" [header]="'Rates and tariff slabs' + (ownerName ? ' · ' + ownerName : '')" [modal]="true" [draggable]="false" appendTo="body" [style]="{ width: 'min(64rem, 96vw)' }" [contentStyle]="{ 'max-height': '78vh', overflow: 'auto' }">
+	<section class="setup-section">
+		<div class="setup-heading"><div><strong>Unit rate</strong><span>Effective-dated invoice rate and electricity duty</span></div><span>{{ rates.length }} entries</span></div>
+		<form *ngIf="canWrite" [formGroup]="rateForm" (ngSubmit)="saveRate()" class="rate-form">
+			<label>Start date<input pInputText type="date" formControlName="startDate"></label>
+			<label>Rate per unit<input pInputText type="number" min="0" step="0.0001" formControlName="ratePerUnit"></label>
+			<label>Fixed charge (₹ / month)<input pInputText type="number" min="0" step="0.01" formControlName="fixedCharge"></label>
+			<label>Wheeling charge (₹ / unit)<input pInputText type="number" min="0" step="0.0001" formControlName="wheelingChargePerUnit"></label>
+			<label>Electricity duty (%)<input pInputText type="number" min="0" max="100" step="0.01" formControlName="electricityDutyPercent"></label>
+			<label>Tax on sale (paise / unit)<input pInputText type="number" min="0" step="0.01" formControlName="taxOnSalePaisePerUnit"></label>
+			<div class="form-actions"><p-button *ngIf="editingRateId !== null" label="Cancel edit" severity="secondary" [outlined]="true" type="button" (onClick)="resetRateForm()"></p-button><p-button [label]="editingRateId === null ? 'Add rate' : 'Save changes'" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="rateForm.invalid"></p-button></div>
+		</form>
+		<div class="rate-loading" *ngIf="loadingRates" role="status">Loading rates…</div>
+		<p-table *ngIf="!loadingRates" appResponsiveTable [value]="rates" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '34rem' }">
+			<ng-template pTemplate="header"><tr><th>Start date</th><th>Rate / unit</th><th>Electricity duty</th><th *ngIf="canWrite || canDelete" class="rate-actions">Actions</th></tr></ng-template>
+			<ng-template pTemplate="body" let-rate><tr><td><span class="p-datatable-column-title">Start date</span>{{ rate.startDate }}</td><td><span class="p-datatable-column-title">Rate / unit</span>{{ rate.ratePerUnit | number:'1.2-4' }}</td><td><span class="p-datatable-column-title">Electricity duty</span>{{ rate.electricityDutyPercent | number:'1.2-2' }}%</td><td *ngIf="canWrite || canDelete" class="rate-actions"><span class="p-datatable-column-title">Actions</span><p-button icon="pi pi-ellipsis-v" [text]="true" severity="secondary" aria-label="Rate actions" (onClick)="openRateActions(rate, $event, rateMenu)"></p-button></td></tr></ng-template>
 			<ng-template pTemplate="emptymessage"><tr><td colspan="4" class="empty-cell">No effective rates added.</td></tr></ng-template>
 		</p-table>
 	</section>
+	<section class="setup-section slab-setup">
+		<div class="setup-heading"><div><strong>Tariff slabs</strong><span>Effective-dated consumption bands used for rate comparison and savings</span></div><span>{{ slabSchedules.length }} entries</span></div>
+		<form *ngIf="canWrite" [formGroup]="slabForm" (ngSubmit)="saveSlabSchedule()" class="slab-form">
+			<label>Start date<input pInputText type="date" formControlName="startDate"></label>
+			<div class="slab-controls">
+				<div class="slab-rows" formArrayName="slabs">
+					<div class="slab-row" *ngFor="let slab of slabRows.controls; let i = index; let isLast = last" [formGroupName]="i">
+						<label>{{ isLast ? 'Final upper limit (blank = unlimited)' : 'Units up to' }}<input pInputText type="number" min="0.01" step="0.01" formControlName="upToUnits"></label>
+						<label>Rate per unit<input pInputText type="number" min="0" step="0.0001" formControlName="ratePerUnit"></label>
+						<label>Adjustment per unit<input pInputText type="number" min="0" step="0.0001" formControlName="adjustmentPerUnit"></label>
+						<p-button icon="pi pi-trash" [text]="true" severity="danger" type="button" aria-label="Remove slab" (onClick)="removeSlab(i)" [disabled]="slabRows.length === 1"></p-button>
+					</div>
+				</div>
+				<p-button label="Add slab band" icon="pi pi-plus" severity="secondary" [outlined]="true" type="button" (onClick)="addSlab()"></p-button>
+			</div>
+			<div class="form-actions"><p-button *ngIf="editingSlabScheduleId !== null" label="Cancel edit" severity="secondary" [outlined]="true" type="button" (onClick)="resetSlabForm()"></p-button><p-button [label]="editingSlabScheduleId === null ? 'Add slab schedule' : 'Save changes'" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="slabForm.invalid"></p-button></div>
+		</form>
+		<div class="rate-loading" *ngIf="loadingSlabs" role="status">Loading slab schedules…</div>
+		<p-table *ngIf="!loadingSlabs" appResponsiveTable [value]="slabSchedules" [rowHover]="true" responsiveLayout="scroll" [tableStyle]="{ 'min-width': '38rem' }">
+			<ng-template pTemplate="header"><tr><th>Start date</th><th>Consumption bands</th><th *ngIf="canWrite || canDelete" class="rate-actions">Actions</th></tr></ng-template>
+			<ng-template pTemplate="body" let-schedule><tr><td><span class="p-datatable-column-title">Start date</span>{{ schedule.startDate }}</td><td><span class="p-datatable-column-title">Consumption bands</span>{{ slabSummary(schedule) }}</td><td *ngIf="canWrite || canDelete" class="rate-actions"><span class="p-datatable-column-title">Actions</span><p-button icon="pi pi-ellipsis-v" [text]="true" severity="secondary" aria-label="Slab schedule actions" (onClick)="openSlabActions(schedule, $event, slabMenu)"></p-button></td></tr></ng-template>
+			<ng-template pTemplate="emptymessage"><tr><td colspan="3" class="empty-cell">No tariff slab schedules added.</td></tr></ng-template>
+		</p-table>
+	</section>
+	<p-menu #rateMenu [model]="rateActionItems" [popup]="true" appendTo="body"></p-menu>
+	<p-menu #slabMenu [model]="slabActionItems" [popup]="true" appendTo="body"></p-menu>
 </p-dialog>

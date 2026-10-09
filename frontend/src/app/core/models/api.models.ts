@@ -20,7 +20,6 @@ export interface EffectiveRateRecord {
   id: number;
   startDate: string;
   ratePerUnit: number;
-  slabs: EffectiveRateSlabRecord[];
   fixedCharge: number;
   wheelingChargePerUnit: number;
   electricityDutyPercent: number;
@@ -30,11 +29,21 @@ export interface EffectiveRateRecord {
 export interface EffectiveRatePayload {
   startDate: string;
   ratePerUnit: number;
-  slabs: EffectiveRateSlabRecord[];
   fixedCharge: number;
   wheelingChargePerUnit: number;
   electricityDutyPercent: number;
   taxOnSalePaisePerUnit: number;
+}
+
+export interface EffectiveSlabScheduleRecord {
+  id: number;
+  startDate: string;
+  slabs: EffectiveRateSlabRecord[];
+}
+
+export interface EffectiveSlabSchedulePayload {
+  startDate: string;
+  slabs: EffectiveRateSlabRecord[];
 }
 
 export interface LoginResult {
@@ -237,6 +246,10 @@ export interface MsedclInvoiceRecord {
   solarBillUnits: number;
   ratePerUnit: number;
   rateSource: string;
+  configuredRatePerUnit: number;
+  slabAverageRatePerUnit: number | null;
+  electricityDutyPercent: number;
+  electricityDutyAmount: number;
   solarAmount: number;
   msebBillAmount: number;
   otherChargesAmount: number;

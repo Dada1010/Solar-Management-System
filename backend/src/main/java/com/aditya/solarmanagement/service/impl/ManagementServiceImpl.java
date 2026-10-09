@@ -27,6 +27,8 @@ import com.aditya.solarmanagement.dto.EffectiveRateRequest;
 import com.aditya.solarmanagement.dto.EffectiveRateResponse;
 import com.aditya.solarmanagement.dto.EffectiveRateSlabRequest;
 import com.aditya.solarmanagement.dto.EffectiveRateSlabResponse;
+import com.aditya.solarmanagement.dto.EffectiveSlabScheduleRequest;
+import com.aditya.solarmanagement.dto.EffectiveSlabScheduleResponse;
 import com.aditya.solarmanagement.dto.MsedclDetailRequest;
 import com.aditya.solarmanagement.dto.MsedclDetailResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
@@ -37,11 +39,13 @@ import com.aditya.solarmanagement.models.Employee;
 import com.aditya.solarmanagement.models.EmployeeRole;
 import com.aditya.solarmanagement.models.EffectiveRate;
 import com.aditya.solarmanagement.models.EffectiveRateOwnerType;
+import com.aditya.solarmanagement.models.EffectiveSlabSchedule;
 import com.aditya.solarmanagement.models.MsedclDetail;
 import com.aditya.solarmanagement.repo.BranchRepository;
 import com.aditya.solarmanagement.repo.CompanyRepository;
 import com.aditya.solarmanagement.repo.EmployeeRepository;
 import com.aditya.solarmanagement.repo.EffectiveRateRepository;
+import com.aditya.solarmanagement.repo.EffectiveSlabScheduleRepository;
 import com.aditya.solarmanagement.repo.MsedclDetailRepository;
 import com.aditya.solarmanagement.repo.specification.BranchSpecifications;
 import com.aditya.solarmanagement.repo.specification.EmployeeSpecifications;
@@ -59,17 +63,20 @@ public class ManagementServiceImpl implements ManagementService {
 	private final MsedclDetailRepository msedclDetails;
 	private final InvoiceService invoiceService;
 	private final EffectiveRateRepository effectiveRates;
+	private final EffectiveSlabScheduleRepository slabSchedules;
 	private final PasswordEncoder passwordEncoder;
 
 	public ManagementServiceImpl(CompanyRepository companies, BranchRepository branches, EmployeeRepository employees,
 			MsedclDetailRepository msedclDetails, InvoiceService invoiceService,
-			EffectiveRateRepository effectiveRates, PasswordEncoder passwordEncoder) {
+			EffectiveRateRepository effectiveRates, EffectiveSlabScheduleRepository slabSchedules,
+			PasswordEncoder passwordEncoder) {
 		this.companies = companies;
 		this.branches = branches;
 		this.employees = employees;
 		this.msedclDetails = msedclDetails;
 		this.invoiceService = invoiceService;
 		this.effectiveRates = effectiveRates;
+		this.slabSchedules = slabSchedules;
 		this.passwordEncoder = passwordEncoder;
 	}
 
@@ -528,7 +535,6 @@ public class ManagementServiceImpl implements ManagementService {
 		}
 		EffectiveRate rate = new EffectiveRate(request.startDate(), request.ratePerUnit(), owner.company(), owner.branch(),
 				owner.msedclDetail());
-		rate.replaceSlabs(slabSpecs(request.slabs()));
 		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
 				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
 		EffectiveRate saved = effectiveRates.save(rate);
@@ -548,7 +554,6 @@ public class ManagementServiceImpl implements ManagementService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "A rate already exists for this start date");
 		}
 		rate.updateDetails(request.startDate(), request.ratePerUnit());
-		rate.replaceSlabs(slabSpecs(request.slabs()));
 		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
 				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
 		logger.info("Updated effective rate id={} ownerType={} ownerId={}", rateId, ownerType, ownerId);
@@ -564,6 +569,112 @@ public class ManagementServiceImpl implements ManagementService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Effective rate not found"));
 		effectiveRates.delete(rate);
 		logger.info("Deleted effective rate id={} ownerType={} ownerId={}", rateId, ownerType, ownerId);
+	}
+
+	@Override
+	public List<EffectiveSlabScheduleResponse> effectiveSlabSchedules(EffectiveRateOwnerType ownerType, Long ownerId,
+			String requestingEmail) {
+		Employee requester = employeeByEmail(requestingEmail);
+		assertRateReadAccess(requester, rateOwner(ownerType, ownerId));
+		return slabSchedulesFor(ownerType, ownerId).stream().map(this::effectiveSlabScheduleResponse).toList();
+	}
+
+	@Override
+	@Transactional
+	public EffectiveSlabScheduleResponse addEffectiveSlabSchedule(EffectiveRateOwnerType ownerType, Long ownerId,
+			String requestingEmail, EffectiveSlabScheduleRequest request) {
+		RateOwner owner = rateOwner(ownerType, ownerId);
+		assertRateReadAccess(employeeByEmail(requestingEmail), owner);
+		if (slabScheduleExists(ownerType, ownerId, request.startDate(), null)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "A slab schedule already exists for this start date");
+		}
+		EffectiveSlabSchedule schedule = new EffectiveSlabSchedule(request.startDate(), owner.company(), owner.branch(),
+				owner.msedclDetail());
+		schedule.replaceSlabs(effectiveSlabSpecs(request.slabs()));
+		return effectiveSlabScheduleResponse(slabSchedules.save(schedule));
+	}
+
+	@Override
+	@Transactional
+	public EffectiveSlabScheduleResponse updateEffectiveSlabSchedule(EffectiveRateOwnerType ownerType, Long ownerId,
+			Long scheduleId, String requestingEmail, EffectiveSlabScheduleRequest request) {
+		RateOwner owner = rateOwner(ownerType, ownerId);
+		assertRateReadAccess(employeeByEmail(requestingEmail), owner);
+		EffectiveSlabSchedule schedule = slabSchedulesFor(ownerType, ownerId).stream()
+				.filter(item -> item.getId().equals(scheduleId)).findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Slab schedule not found"));
+		if (slabScheduleExists(ownerType, ownerId, request.startDate(), scheduleId)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "A slab schedule already exists for this start date");
+		}
+		schedule.updateStartDate(request.startDate());
+		schedule.replaceSlabs(effectiveSlabSpecs(request.slabs()));
+		return effectiveSlabScheduleResponse(schedule);
+	}
+
+	@Override
+	@Transactional
+	public void deleteEffectiveSlabSchedule(EffectiveRateOwnerType ownerType, Long ownerId, Long scheduleId,
+			String requestingEmail) {
+		RateOwner owner = rateOwner(ownerType, ownerId);
+		assertRateReadAccess(employeeByEmail(requestingEmail), owner);
+		EffectiveSlabSchedule schedule = slabSchedulesFor(ownerType, ownerId).stream()
+				.filter(item -> item.getId().equals(scheduleId)).findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Slab schedule not found"));
+		slabSchedules.delete(schedule);
+	}
+
+	private List<EffectiveSlabSchedule> slabSchedulesFor(EffectiveRateOwnerType ownerType, Long ownerId) {
+		rateOwner(ownerType, ownerId);
+		return switch (ownerType) {
+			case COMPANY -> slabSchedules.findAllByCompany_IdOrderByStartDateDescIdDesc(ownerId);
+			case BRANCH -> slabSchedules.findAllByBranch_IdOrderByStartDateDescIdDesc(ownerId);
+			case MSEDCL_DETAIL -> slabSchedules.findAllByMsedclDetail_IdOrderByStartDateDescIdDesc(ownerId);
+		};
+	}
+
+	private boolean slabScheduleExists(EffectiveRateOwnerType ownerType, Long ownerId, java.time.LocalDate startDate,
+			Long excludedId) {
+		return switch (ownerType) {
+			case COMPANY -> excludedId == null
+					? slabSchedules.existsByCompany_IdAndStartDate(ownerId, startDate)
+					: slabSchedules.existsByCompany_IdAndStartDateAndIdNot(ownerId, startDate, excludedId);
+			case BRANCH -> excludedId == null
+					? slabSchedules.existsByBranch_IdAndStartDate(ownerId, startDate)
+					: slabSchedules.existsByBranch_IdAndStartDateAndIdNot(ownerId, startDate, excludedId);
+			case MSEDCL_DETAIL -> excludedId == null
+					? slabSchedules.existsByMsedclDetail_IdAndStartDate(ownerId, startDate)
+					: slabSchedules.existsByMsedclDetail_IdAndStartDateAndIdNot(ownerId, startDate, excludedId);
+		};
+	}
+
+	private EffectiveSlabScheduleResponse effectiveSlabScheduleResponse(EffectiveSlabSchedule schedule) {
+		return new EffectiveSlabScheduleResponse(schedule.getId(), schedule.getStartDate(),
+				schedule.getSlabs().stream().map(slab -> new EffectiveRateSlabResponse(slab.getUpToUnits(),
+					slab.getRatePerUnit(), slab.getAdjustmentPerUnit())).toList());
+	}
+
+	private List<EffectiveSlabSchedule.SlabSpec> effectiveSlabSpecs(List<EffectiveRateSlabRequest> slabs) {
+		if (slabs.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one slab is required");
+		}
+		List<EffectiveSlabSchedule.SlabSpec> specs = new java.util.ArrayList<>();
+		java.math.BigDecimal previous = java.math.BigDecimal.ZERO;
+		for (int index = 0; index < slabs.size(); index++) {
+			EffectiveRateSlabRequest slab = slabs.get(index);
+			if (index == slabs.size() - 1) {
+				if (slab.upToUnits() != null) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The last slab must have no upper limit");
+				}
+			} else {
+				if (slab.upToUnits() == null || slab.upToUnits().compareTo(previous) <= 0) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"Each slab limit must be greater than the previous slab limit");
+				}
+				previous = slab.upToUnits();
+			}
+			specs.add(new EffectiveSlabSchedule.SlabSpec(slab.upToUnits(), slab.ratePerUnit(), slab.adjustmentPerUnit()));
+		}
+		return specs;
 	}
 
 	private List<EffectiveRate> ratesFor(EffectiveRateOwnerType ownerType, Long ownerId) {
@@ -603,31 +714,8 @@ public class ManagementServiceImpl implements ManagementService {
 
 	private EffectiveRateResponse effectiveRateResponse(EffectiveRate rate) {
 		return new EffectiveRateResponse(rate.getId(), rate.getStartDate(), rate.getRatePerUnit(),
-				rate.getSlabs().stream().map(slab -> new EffectiveRateSlabResponse(slab.getUpToUnits(),
-						slab.getRatePerUnit(), slab.getAdjustmentPerUnit())).toList(),
 				rate.getFixedCharge(), rate.getWheelingChargePerUnit(), rate.getElectricityDutyPercent(),
 				rate.getTaxOnSalePaisePerUnit());
-	}
-
-	private List<EffectiveRate.SlabSpec> slabSpecs(List<EffectiveRateSlabRequest> slabs) {
-		List<EffectiveRate.SlabSpec> specs = new java.util.ArrayList<>();
-		java.math.BigDecimal previous = java.math.BigDecimal.ZERO;
-		for (int index = 0; index < slabs.size(); index++) {
-			EffectiveRateSlabRequest slab = slabs.get(index);
-			if (index == slabs.size() - 1) {
-				if (slab.upToUnits() != null) {
-					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The last slab must have no upper limit");
-				}
-			} else {
-				if (slab.upToUnits() == null || slab.upToUnits().compareTo(previous) <= 0) {
-					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-							"Each slab limit must be greater than the previous slab limit");
-				}
-				previous = slab.upToUnits();
-			}
-			specs.add(new EffectiveRate.SlabSpec(slab.upToUnits(), slab.ratePerUnit(), slab.adjustmentPerUnit()));
-		}
-		return specs;
 	}
 
 	private record RateOwner(EffectiveRateOwnerType ownerType, Company company, Branch branch, MsedclDetail msedclDetail) {}

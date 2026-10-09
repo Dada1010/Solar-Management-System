@@ -132,6 +132,18 @@ public class MsedclInvoice {
 	@Column(name = "rate_source", nullable = false, length = 40)
 	private String rateSource;
 
+	@Column(name = "configured_rate_per_unit", nullable = false, precision = 12, scale = 4)
+	private BigDecimal configuredRatePerUnit;
+
+	@Column(name = "slab_average_rate_per_unit", precision = 12, scale = 4)
+	private BigDecimal slabAverageRatePerUnit;
+
+	@Column(name = "electricity_duty_percent", nullable = false, precision = 5, scale = 2)
+	private BigDecimal electricityDutyPercent;
+
+	@Column(name = "electricity_duty_amount", nullable = false, precision = 14, scale = 2)
+	private BigDecimal electricityDutyAmount;
+
 	@Column(name = "solar_amount", nullable = false, precision = 14, scale = 2)
 	private BigDecimal solarAmount;
 
@@ -192,7 +204,9 @@ public class MsedclInvoice {
 			BigDecimal generationCurrent, BigDecimal generationPrevious, BigDecimal generationConsumption,
 			BigDecimal previousBankUnits, BigDecimal solarOffsetUnits, BigDecimal bankSolarUnits,
 			BigDecimal solarBillUnits,
-			BigDecimal ratePerUnit, String rateSource, BigDecimal solarAmount, BigDecimal msebBillAmount,
+			BigDecimal ratePerUnit, String rateSource, BigDecimal configuredRatePerUnit,
+			BigDecimal slabAverageRatePerUnit, BigDecimal electricityDutyPercent, BigDecimal electricityDutyAmount,
+			BigDecimal solarAmount, BigDecimal msebBillAmount,
 			BigDecimal invoiceAmount, Employee referral, BigDecimal incentiveAmount, BigDecimal otherChargesAmount) {
 		this.msedclDetail = detail;
 		this.branch = detail.getCustomer().getBranch();
@@ -221,6 +235,10 @@ public class MsedclInvoice {
 		this.solarBillUnits = solarBillUnits;
 		this.ratePerUnit = ratePerUnit;
 		this.rateSource = rateSource;
+		this.configuredRatePerUnit = configuredRatePerUnit;
+		this.slabAverageRatePerUnit = slabAverageRatePerUnit;
+		this.electricityDutyPercent = electricityDutyPercent;
+		this.electricityDutyAmount = electricityDutyAmount;
 		this.solarAmount = solarAmount;
 		this.msebBillAmount = msebBillAmount;
 		this.invoiceAmount = invoiceAmount;
@@ -283,6 +301,10 @@ public class MsedclInvoice {
 		reversal.solarBillUnits = this.solarBillUnits;
 		reversal.ratePerUnit = this.ratePerUnit;
 		reversal.rateSource = this.rateSource;
+		reversal.configuredRatePerUnit = this.configuredRatePerUnit;
+		reversal.slabAverageRatePerUnit = this.slabAverageRatePerUnit;
+		reversal.electricityDutyPercent = this.electricityDutyPercent;
+		reversal.electricityDutyAmount = this.electricityDutyAmount.negate();
 		reversal.solarAmount = this.solarAmount.negate();
 		reversal.msebBillAmount = this.msebBillAmount.negate();
 		reversal.invoiceAmount = this.invoiceAmount.negate();

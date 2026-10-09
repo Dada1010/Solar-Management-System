@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.aditya.solarmanagement.dto.ApiResponse;
 import com.aditya.solarmanagement.dto.EffectiveRateRequest;
 import com.aditya.solarmanagement.dto.EffectiveRateResponse;
+import com.aditya.solarmanagement.dto.EffectiveSlabScheduleRequest;
+import com.aditya.solarmanagement.dto.EffectiveSlabScheduleResponse;
 import com.aditya.solarmanagement.models.EffectiveRateOwnerType;
 import com.aditya.solarmanagement.service.ManagementService;
 
@@ -62,5 +64,40 @@ public class EffectiveRateController {
 			@PathVariable Long ownerId, @PathVariable Long rateId) {
 		managementService.deleteEffectiveRate(ownerType, ownerId, rateId);
 		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Effective rate deleted successfully", null));
+	}
+
+	@GetMapping("/{ownerType}/{ownerId}/slabs")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER', 'CUSTOMER')")
+	public ResponseEntity<ApiResponse<List<EffectiveSlabScheduleResponse>>> slabs(
+			@PathVariable EffectiveRateOwnerType ownerType, @PathVariable Long ownerId, Authentication authentication) {
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Effective slab schedules retrieved successfully",
+				managementService.effectiveSlabSchedules(ownerType, ownerId, authentication.getName())));
+	}
+
+	@PostMapping("/{ownerType}/{ownerId}/slabs")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+	public ResponseEntity<ApiResponse<EffectiveSlabScheduleResponse>> addSlabs(
+			@PathVariable EffectiveRateOwnerType ownerType, @PathVariable Long ownerId, Authentication authentication,
+			@Valid @RequestBody EffectiveSlabScheduleRequest request) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED,
+				"Effective slab schedule added successfully", managementService.addEffectiveSlabSchedule(ownerType, ownerId,
+						authentication.getName(), request)));
+	}
+
+	@PutMapping("/{ownerType}/{ownerId}/slabs/{scheduleId}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+	public ResponseEntity<ApiResponse<EffectiveSlabScheduleResponse>> updateSlabs(
+			@PathVariable EffectiveRateOwnerType ownerType, @PathVariable Long ownerId, @PathVariable Long scheduleId,
+			Authentication authentication, @Valid @RequestBody EffectiveSlabScheduleRequest request) {
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Effective slab schedule updated successfully",
+				managementService.updateEffectiveSlabSchedule(ownerType, ownerId, scheduleId, authentication.getName(), request)));
+	}
+
+	@DeleteMapping("/{ownerType}/{ownerId}/slabs/{scheduleId}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<Void>> deleteSlabs(@PathVariable EffectiveRateOwnerType ownerType,
+			@PathVariable Long ownerId, @PathVariable Long scheduleId, Authentication authentication) {
+		managementService.deleteEffectiveSlabSchedule(ownerType, ownerId, scheduleId, authentication.getName());
+		return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "Effective slab schedule deleted successfully", null));
 	}
 }

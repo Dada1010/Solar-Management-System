@@ -35,15 +35,19 @@ export class WorkspaceShellComponent implements OnDestroy {
     previousBankUnits: this.formBuilder.control<number | null>(null, [Validators.required, Validators.min(0)]),
     msebBillAmount: this.formBuilder.control<number | null>(null, Validators.min(0))
   });
-  readonly profileMenu: MenuItem[] = [
-    { label: 'Signed in', disabled: true },
-    { separator: true },
-    { label: 'Sign out', icon: 'pi pi-sign-out', command: () => this.signOut() }
-  ];
+  readonly profileMenu: MenuItem[];
   private readonly routeSubscription: Subscription;
 
   constructor(private readonly router: Router, readonly auth: AuthService,
 		private readonly api: ManagementApiService) {
+    this.profileMenu = [
+      { label: 'Signed in', disabled: true },
+      { separator: true },
+      ...(this.canUseSavingsCalculator
+        ? [{ label: 'Savings calculator', icon: 'pi pi-calculator', command: () => this.openSavingsCalculator() }, { separator: true }]
+        : []),
+      { label: 'Sign out', icon: 'pi pi-sign-out', command: () => this.signOut() }
+    ];
     this.setTitle(router.url);
     this.routeSubscription = router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd)

@@ -265,6 +265,124 @@ export class InvoiceComponent implements OnDestroy {
 		setTimeout(() => window.print(), 0);
 	}
 
+	async downloadInvoicePdf(invoice: MsedclInvoiceRecord): Promise<void> {
+		const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+			import('jspdf'),
+			import('jspdf-autotable')
+		]);
+		const document = new jsPDF({ unit: 'mm', format: 'a4' });
+		const pageWidth = document.internal.pageSize.getWidth();
+		document.setFillColor(20, 67, 54);
+		document.rect(0, 0, pageWidth, 34, 'F');
+		document.setTextColor(255, 255, 255);
+		document.setFont('helvetica', 'bold');
+		document.setFontSize(19);
+		document.text('ADITYA SOLAR', 15, 16);
+		document.setFont('helvetica', 'normal');
+		document.setFontSize(9);
+		document.text('CONSUMER ENERGY INVOICE', 15, 24);
+		document.text(`Invoice ${invoice.invoiceNo ?? 'Preview'}`, pageWidth - 15, 16, { align: 'right' });
+		document.text(`Issued ${invoice.invoiceDate}  |  Billing ${invoice.billingDate}`, pageWidth - 15, 24, { align: 'right' });
+		document.setTextColor(35, 49, 43);
+		let y = 43;
+		document.setFont('helvetica', 'bold');
+		document.setFontSize(11);
+		document.text('Consumer details', 15, y);
+		document.setFont('helvetica', 'normal');
+		document.setFontSize(9);
+		document.text(`Name: ${invoice.consumerName}`, 15, y + 7);
+		document.text(`Consumer no.: ${invoice.consumerNo}`, 15, y + 13);
+		document.text(`Billing unit: ${invoice.billingUnit}`, pageWidth / 2, y + 7);
+		document.text(`Due date: ${invoice.dueDate}`, pageWidth / 2, y + 13);
+		y += 24;
+		document.setFont('helvetica', 'bold');
+		document.setFontSize(11);
+		document.text('Meter readings', 15, y);
+		y += 3;
+		autoTable(document, {
+			startY: y,
+			head: [['Reading', 'Current', 'Previous', 'Consumption']],
+			body: [
+				['Import', this.units(invoice.importCurrent), this.units(invoice.importPrevious), this.units(invoice.importConsumption)],
+				['Export', this.units(invoice.exportCurrent), this.units(invoice.exportPrevious), this.units(invoice.exportConsumption)],
+				['Generation', this.units(invoice.generationCurrent), this.units(invoice.generationPrevious), this.units(invoice.generationConsumption)]
+			],
+			theme: 'grid',
+			styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5, textColor: [35, 49, 43], lineColor: [220, 228, 223] },
+			headStyles: { fillColor: [230, 239, 233], textColor: [27, 64, 50], fontStyle: 'bold' }
+		});
+		y = (document as InstanceType<typeof jsPDF> & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 9;
+		document.setFont('helvetica', 'bold');
+		document.setFontSize(11);
+		document.text('Solar charges', 15, y);
+		y += 3;
+		const charges: string[][] = [
+			['Solar bill units', `${this.units(invoice.solarBillUnits)} units`],
+			['Configured rate', `INR ${this.money(invoice.configuredRatePerUnit)} / unit`]
+		];
+		if (invoice.slabAverageRatePerUnit !== null) charges.push(['Weighted slab average', `INR ${this.money(invoice.slabAverageRatePerUnit)} / unit`]);
+		charges.push(
+			['Applied rate', `INR ${this.money(invoice.ratePerUnit)} / unit (${invoice.rateSource.replaceAll('_', ' ').toLowerCase()})`],
+			['Solar energy charge', `INR ${this.money(invoice.solarAmount)}`],
+			[`Electricity duty (${this.money(invoice.electricityDutyPercent)}%)`, `INR ${this.money(invoice.electricityDutyAmount)}`]
+		);
+		if (invoice.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT') charges.push(['MSEB bill amount', `INR ${this.money(invoice.msebBillAmount)}`]);
+		for (const charge of invoice.otherCharges) charges.push([charge.reasonName, `INR ${this.money(charge.amount)}`]);
+		charges.push(['INVOICE TOTAL', `INR ${this.money(invoice.invoiceAmount)}`]);
+		autoTable(document, {
+			startY: y,
+			body: charges,
+			theme: 'grid',
+			styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5, textColor: [35, 49, 43], lineColor: [220, 228, 223] },
+			columnStyles: { 1: { halign: 'right' } },
+			didParseCell: (data) => {
+				if (data.row.index === charges.length - 1) {
+					data.cell.styles.fontStyle = 'bold';
+					data.cell.styles.fillColor = [230, 239, 233];
+				}
+			}
+		});
+		if (invoice.consumerSavingsAmount !== null) {
+			y = (document as InstanceType<typeof jsPDF> & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 9;
+			if (y > 260) {
+				document.addPage();
+				y = 20;
+			}
+			document.setFont('helvetica', 'bold');
+			document.setFontSize(11);
+			document.text('Solar savings', 15, y);
+			autoTable(document, {
+				startY: y + 3,
+				body: [
+					['Total consumption', `${this.units(invoice.totalConsumptionUnits ?? 0)} units`],
+					['Bill without solar', `INR ${this.money(invoice.withoutSolarBillAmount ?? 0)}`],
+					['Bill with solar', `INR ${this.money(invoice.withSolarBillAmount ?? 0)}`],
+					['Consumer savings', `INR ${this.money(invoice.consumerSavingsAmount)}`]
+				],
+				theme: 'grid',
+				styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5, textColor: [35, 49, 43], lineColor: [220, 228, 223] },
+				columnStyles: { 1: { halign: 'right' } },
+				didParseCell: (data) => {
+					if (data.row.index === 3) {
+						data.cell.styles.fontStyle = 'bold';
+						data.cell.styles.fillColor = [230, 239, 233];
+					}
+				}
+			});
+		}
+		const pageCount = document.getNumberOfPages();
+		for (let page = 1; page <= pageCount; page++) {
+			document.setPage(page);
+			document.setFont('helvetica', 'normal');
+			document.setFontSize(8);
+			document.setTextColor(115, 128, 120);
+			document.text('Aditya Solar Management System', 15, 287);
+			document.text(`${page} / ${pageCount}`, pageWidth - 15, 287, { align: 'right' });
+		}
+		const fileName = (invoice.invoiceNo ?? 'invoice').replace(/[^a-zA-Z0-9_-]+/g, '_');
+		document.save(`${fileName}.pdf`);
+	}
+
 	viewInvoice(invoice: MsedclInvoiceRecord): void {
 		this.viewingInvoice = invoice;
 		this.invoiceViewVisible = true;
@@ -344,6 +462,7 @@ export class InvoiceComponent implements OnDestroy {
 	openInvoiceActions(invoice: MsedclInvoiceRecord, event: Event, menu: Menu): void {
 		this.invoiceActionItems = [
 			{ label: 'View invoice', icon: 'pi pi-eye', command: () => this.viewInvoice(invoice) },
+			{ label: 'Download PDF', icon: 'pi pi-download', command: () => this.downloadInvoicePdf(invoice) },
 			{ label: 'Print invoice', icon: 'pi pi-print', command: () => this.printInvoice(invoice) }
 		];
 		if (invoice.msebBillFileName) {
@@ -588,6 +707,14 @@ export class InvoiceComponent implements OnDestroy {
 
 	private consumption(current: number, previous: number): number {
 		return Math.max(0, current - previous);
+	}
+
+	private units(value: number): string {
+		return value.toFixed(2);
+	}
+
+	private money(value: number): string {
+		return value.toFixed(2);
 	}
 
 	private today(): string {

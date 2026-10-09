@@ -34,7 +34,6 @@
         <div class="breadcrumb"><span>Workspace</span><i class="pi pi-angle-right"></i><strong>{{ activeTitle }}</strong></div>
       </div>
       <div class="topbar-right">
-			<p-button *ngIf="canUseSavingsCalculator" label="Savings calculator" icon="pi pi-calculator" severity="secondary" [outlined]="true" (onClick)="openSavingsCalculator()"></p-button>
         <span class="signed-in-name">{{ auth.user?.name }}</span>
         <button class="profile-trigger" type="button" (click)="userMenu.toggle($event)" aria-label="User profile menu">
           <p-avatar [label]="userInitials" shape="circle"></p-avatar><i class="pi pi-angle-down"></i>

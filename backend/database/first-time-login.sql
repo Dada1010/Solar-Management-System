@@ -1,4 +1,4 @@
-USE solar_management;
+USE ees_solar_management;
 
 INSERT INTO companies (name, industry, address, mobile_no, email_address)
 VALUES ('Aditya Solar Group', 'Renewable energy', '', '', '')

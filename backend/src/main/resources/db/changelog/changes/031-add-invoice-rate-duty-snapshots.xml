@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="031-add-invoice-rate-duty-snapshots" author="aditya">
+		<addColumn tableName="msedcl_invoices">
+			<column name="configured_rate_per_unit" type="DECIMAL(12,4)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+			<column name="slab_average_rate_per_unit" type="DECIMAL(12,4)"/>
+			<column name="electricity_duty_percent" type="DECIMAL(5,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+			<column name="electricity_duty_amount" type="DECIMAL(14,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+		</addColumn>
+		<sql>UPDATE msedcl_invoices SET configured_rate_per_unit = rate_per_unit</sql>
+	</changeSet>
+</databaseChangeLog>

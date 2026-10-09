@@ -16,6 +16,8 @@ import {
   EffectiveRateOwnerType,
   EffectiveRatePayload,
   EffectiveRateRecord,
+  EffectiveSlabSchedulePayload,
+  EffectiveSlabScheduleRecord,
   InvoicePaymentPayload,
   InvoicePaymentRecord,
   InvoiceFilters,
@@ -231,6 +233,22 @@ export class ManagementApiService {
 
   deleteEffectiveRate(ownerType: EffectiveRateOwnerType, ownerId: number, rateId: number): Observable<void> {
     return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/effective-rates/${ownerType}/${ownerId}/${rateId}`).pipe(map(unwrap));
+  }
+
+  effectiveSlabSchedules(ownerType: EffectiveRateOwnerType, ownerId: number): Observable<EffectiveSlabScheduleRecord[]> {
+    return this.get(`/effective-rates/${ownerType}/${ownerId}/slabs`);
+  }
+
+  addEffectiveSlabSchedule(ownerType: EffectiveRateOwnerType, ownerId: number, payload: EffectiveSlabSchedulePayload): Observable<EffectiveSlabScheduleRecord> {
+    return this.post(`/effective-rates/${ownerType}/${ownerId}/slabs`, payload);
+  }
+
+  updateEffectiveSlabSchedule(ownerType: EffectiveRateOwnerType, ownerId: number, scheduleId: number, payload: EffectiveSlabSchedulePayload): Observable<EffectiveSlabScheduleRecord> {
+    return this.put(`/effective-rates/${ownerType}/${ownerId}/slabs/${scheduleId}`, payload);
+  }
+
+  deleteEffectiveSlabSchedule(ownerType: EffectiveRateOwnerType, ownerId: number, scheduleId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/effective-rates/${ownerType}/${ownerId}/slabs/${scheduleId}`).pipe(map(unwrap));
   }
 
   private get<T>(path: string): Observable<T> {

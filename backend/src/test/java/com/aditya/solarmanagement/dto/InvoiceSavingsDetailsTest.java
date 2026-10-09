@@ -26,7 +26,7 @@ class InvoiceSavingsDetailsTest {
 		InvoiceSavingsDetails details = new InvoiceSavingsDetails(new BigDecimal("120.0000"),
 				new BigDecimal("326.0000"), new BigDecimal("446.0000"), BigDecimal.ZERO, bill, null,
 				new BigDecimal("140.00"), true, new BigDecimal("446.0000"), new BigDecimal("5.0000"),
-				new BigDecimal("2230.00"));
+				new BigDecimal("2230.00"), new BigDecimal("16.00"), new BigDecimal("356.80"));
 
 		ObjectMapper mapper = new ObjectMapper();
 		InvoiceSavingsDetails copy = mapper.readValue(mapper.writeValueAsString(details), InvoiceSavingsDetails.class);

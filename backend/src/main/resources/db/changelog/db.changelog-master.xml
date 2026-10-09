@@ -32,4 +32,6 @@
 	<include file="db/changelog/changes/027-drop-invoice-slab-lines.xml"/>
 	<include file="db/changelog/changes/028-add-tariff-charges-and-savings.xml"/>
 	<include file="db/changelog/changes/029-add-savings-breakdown.xml"/>
+	<include file="db/changelog/changes/030-separate-effective-slab-schedules.xml"/>
+	<include file="db/changelog/changes/031-add-invoice-rate-duty-snapshots.xml"/>
 </databaseChangeLog>

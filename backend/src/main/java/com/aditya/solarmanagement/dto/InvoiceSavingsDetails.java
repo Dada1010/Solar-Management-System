@@ -15,7 +15,9 @@ public record InvoiceSavingsDetails(
 		boolean gridAmountEntered,
 		BigDecimal solarBillUnits,
 		BigDecimal solarRatePerUnit,
-		BigDecimal solarAmount) {
+		BigDecimal solarAmount,
+		BigDecimal electricityDutyPercent,
+		BigDecimal electricityDutyAmount) {
 
 	public record TariffBand(BigDecimal fromUnits, BigDecimal upToUnits, BigDecimal units, BigDecimal ratePerUnit,
 			BigDecimal adjustmentPerUnit, BigDecimal amount) {

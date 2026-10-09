@@ -1,19 +1,18 @@
 :host { display: inline-flex; }
-.rate-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 8px 0 18px; border-bottom: 1px solid #e9eee8; }
-.rate-form label { display: grid; gap: 7px; color: #3b544a; font-size: 11px; font-weight: 700; }
-.rate-form input { width: 100%; }
+.setup-section { padding: 14px 0 18px; }
+.setup-section + .setup-section { border-top: 1px solid #e9eee8; }
+.setup-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: #315448; font-size: 13px; }
+.setup-heading div { display: grid; gap: 3px; }
+.setup-heading span { color: #87958e; font-size: 11px; font-weight: 400; }
+.rate-form, .slab-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 8px 0 16px; border-bottom: 1px solid #e9eee8; }
+.rate-form label, .slab-form > label, .slab-row label { display: grid; gap: 6px; color: #3b544a; font-size: 11px; font-weight: 700; }
+.rate-form input, .slab-form input { width: 100%; }
 .form-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 9px; }
-.slab-section { grid-column: 1 / -1; display: grid; gap: 10px; }
-.slab-heading { display: flex; align-items: center; justify-content: space-between; color: #3b544a; font-size: 11px; }
+.slab-controls { grid-column: 1 / -1; display: grid; gap: 10px; }
 .slab-rows { display: grid; gap: 8px; }
-.tariff-charges { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.tariff-charges label { display: grid; gap: 6px; color: #3b544a; font-size: 11px; font-weight: 700; }
 .slab-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 10px; padding: 10px; border: 1px solid #e5ebe3; border-radius: 6px; background: #f8faf7; }
-.slab-row label { display: grid; gap: 6px; color: #3b544a; font-size: 11px; font-weight: 700; }
-.rate-history { padding-top: 16px; }
-.rate-history-heading { display: flex; justify-content: space-between; margin-bottom: 10px; color: #516b5f; font-size: 11px; }
-.rate-history-heading span, .rate-loading { color: #87958e; font-size: 11px; }
+.rate-loading { color: #87958e; font-size: 11px; padding: 20px 0; text-align: center; }
 .rate-loading { padding: 20px 0; text-align: center; }
 .rate-actions { width: 100px; text-align: center; }
 .empty-cell { padding: 28px !important; color: #84928a; text-align: center; }
-@media (max-width: 600px) { .rate-form, .slab-row, .tariff-charges { grid-template-columns: 1fr; } .form-actions { grid-column: auto; } }
+@media (max-width: 700px) { .rate-form, .slab-form, .slab-row { grid-template-columns: 1fr; } .form-actions, .slab-controls { grid-column: auto; } .rate-actions { width: auto; } }

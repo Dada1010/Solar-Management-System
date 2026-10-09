@@ -10,6 +10,8 @@ import com.aditya.solarmanagement.dto.EmployeeRequest;
 import com.aditya.solarmanagement.dto.EmployeeResponse;
 import com.aditya.solarmanagement.dto.EffectiveRateRequest;
 import com.aditya.solarmanagement.dto.EffectiveRateResponse;
+import com.aditya.solarmanagement.dto.EffectiveSlabScheduleRequest;
+import com.aditya.solarmanagement.dto.EffectiveSlabScheduleResponse;
 import com.aditya.solarmanagement.dto.MsedclDetailRequest;
 import com.aditya.solarmanagement.dto.MsedclDetailResponse;
 import com.aditya.solarmanagement.dto.PageResponse;
@@ -50,4 +52,12 @@ public interface ManagementService {
 	EffectiveRateResponse updateEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, Long rateId,
 			EffectiveRateRequest request);
 	void deleteEffectiveRate(EffectiveRateOwnerType ownerType, Long ownerId, Long rateId);
+	List<EffectiveSlabScheduleResponse> effectiveSlabSchedules(EffectiveRateOwnerType ownerType, Long ownerId,
+			String requestingEmail);
+	EffectiveSlabScheduleResponse addEffectiveSlabSchedule(EffectiveRateOwnerType ownerType, Long ownerId,
+			String requestingEmail, EffectiveSlabScheduleRequest request);
+	EffectiveSlabScheduleResponse updateEffectiveSlabSchedule(EffectiveRateOwnerType ownerType, Long ownerId,
+			Long scheduleId, String requestingEmail, EffectiveSlabScheduleRequest request);
+	void deleteEffectiveSlabSchedule(EffectiveRateOwnerType ownerType, Long ownerId, Long scheduleId,
+			String requestingEmail);
 }

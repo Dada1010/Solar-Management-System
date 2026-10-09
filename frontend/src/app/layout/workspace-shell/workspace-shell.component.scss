@@ -71,7 +71,6 @@
   .mobile-nav-toggle { display: inline-grid; place-items: center; }
   .topbar { height: 60px; padding-inline: 14px; }
   .topbar-right { gap: 7px; }
-  .topbar-right > p-button { max-width: 42px; }
   .calculator-form, .calculator-bills { grid-template-columns: minmax(0, 1fr); }
   .calculator-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .calculator-reading-group { grid-template-columns: minmax(0, 1fr); }

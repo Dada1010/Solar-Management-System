@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="030-create-effective-slab-schedules" author="aditya">
+		<createTable tableName="effective_slab_schedules">
+			<column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" primaryKeyName="pk_effective_slab_schedules" nullable="false"/></column>
+			<column name="start_date" type="DATE"><constraints nullable="false"/></column>
+			<column name="company_id" type="BIGINT"/>
+			<column name="branch_id" type="BIGINT"/>
+			<column name="msedcl_detail_id" type="BIGINT"/>
+		</createTable>
+		<addForeignKeyConstraint baseTableName="effective_slab_schedules" baseColumnNames="company_id"
+			referencedTableName="companies" referencedColumnNames="id" constraintName="fk_slab_schedule_company" deleteCascade="true"/>
+		<addForeignKeyConstraint baseTableName="effective_slab_schedules" baseColumnNames="branch_id"
+			referencedTableName="branches" referencedColumnNames="id" constraintName="fk_slab_schedule_branch" deleteCascade="true"/>
+		<addForeignKeyConstraint baseTableName="effective_slab_schedules" baseColumnNames="msedcl_detail_id"
+			referencedTableName="customer_msedcl_details" referencedColumnNames="id" constraintName="fk_slab_schedule_detail" deleteCascade="true"/>
+		<addUniqueConstraint tableName="effective_slab_schedules" columnNames="company_id,start_date" constraintName="uk_slab_schedule_company_date"/>
+		<addUniqueConstraint tableName="effective_slab_schedules" columnNames="branch_id,start_date" constraintName="uk_slab_schedule_branch_date"/>
+		<addUniqueConstraint tableName="effective_slab_schedules" columnNames="msedcl_detail_id,start_date" constraintName="uk_slab_schedule_detail_date"/>
+		<sql>ALTER TABLE effective_slab_schedules ADD CONSTRAINT ck_slab_schedule_single_owner CHECK (
+			(company_id IS NOT NULL AND branch_id IS NULL AND msedcl_detail_id IS NULL)
+			OR (company_id IS NULL AND branch_id IS NOT NULL AND msedcl_detail_id IS NULL)
+			OR (company_id IS NULL AND branch_id IS NULL AND msedcl_detail_id IS NOT NULL)
+		)</sql>
+		<createTable tableName="effective_slabs">
+			<column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" primaryKeyName="pk_effective_slabs" nullable="false"/></column>
+			<column name="schedule_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_effective_slab_schedule" references="effective_slab_schedules(id)" deleteCascade="true"/></column>
+			<column name="up_to_units" type="DECIMAL(14,4)"/>
+			<column name="rate_per_unit" type="DECIMAL(12,4)"><constraints nullable="false"/></column>
+			<column name="adjustment_per_unit" type="DECIMAL(12,4)"><constraints nullable="false"/></column>
+		</createTable>
+		<sql>INSERT INTO effective_slab_schedules (start_date, company_id, branch_id, msedcl_detail_id)
+			SELECT DISTINCT r.start_date, r.company_id, r.branch_id, r.msedcl_detail_id
+			FROM effective_rates r INNER JOIN effective_rate_slabs s ON s.effective_rate_id = r.id</sql>
+		<sql>INSERT INTO effective_slabs (schedule_id, up_to_units, rate_per_unit, adjustment_per_unit)
+			SELECT schedule.id, legacy.up_to_units, legacy.rate_per_unit, legacy.adjustment_per_unit
+			FROM effective_rate_slabs legacy
+			INNER JOIN effective_rates rate ON rate.id = legacy.effective_rate_id
+			INNER JOIN effective_slab_schedules schedule
+				ON schedule.start_date = rate.start_date
+				AND schedule.company_id &lt;=&gt; rate.company_id
+				AND schedule.branch_id &lt;=&gt; rate.branch_id
+				AND schedule.msedcl_detail_id &lt;=&gt; rate.msedcl_detail_id</sql>
+	</changeSet>
+</databaseChangeLog>

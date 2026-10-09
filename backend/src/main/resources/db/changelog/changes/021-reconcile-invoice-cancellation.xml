@@ -30,6 +30,19 @@
 			referencedTableName="msedcl_invoices" referencedColumnNames="id"
 			constraintName="fk_invoice_reversal_original"/>
 	</changeSet>
+	<changeSet id="021-add-invoice-detail-fk-index" author="aditya">
+		<preConditions onFail="MARK_RAN">
+			<sqlCheck expectedResult="0">
+				SELECT COUNT(DISTINCT index_name) FROM information_schema.statistics
+				WHERE table_schema = DATABASE()
+				AND table_name = 'msedcl_invoices'
+				AND index_name = 'idx_msedcl_invoices_detail_id'
+			</sqlCheck>
+		</preConditions>
+		<createIndex tableName="msedcl_invoices" indexName="idx_msedcl_invoices_detail_id">
+			<column name="msedcl_detail_id"/>
+		</createIndex>
+	</changeSet>
 	<changeSet id="021-drop-invoice-detail-date-unique" author="aditya">
 		<preConditions onFail="MARK_RAN"><indexExists tableName="msedcl_invoices" indexName="uk_invoice_detail_billing_date"/></preConditions>
 		<dropUniqueConstraint tableName="msedcl_invoices" constraintName="uk_invoice_detail_billing_date"/>
