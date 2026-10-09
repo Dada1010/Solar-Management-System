@@ -318,12 +318,12 @@ export class InvoiceComponent implements OnDestroy {
 		y += 3;
 		const charges: string[][] = [
 			['Solar bill units', `${this.units(invoice.solarBillUnits)} units`],
-			['Configured rate', `INR ${this.money(invoice.configuredRatePerUnit)} / unit`]
+			['Rate per unit', `INR ${this.money(invoice.ratePerUnit)}`]
 		];
-		if (invoice.slabAverageRatePerUnit !== null) charges.push(['Weighted slab average', `INR ${this.money(invoice.slabAverageRatePerUnit)} / unit`]);
 		charges.push(
-			['Applied rate', `INR ${this.money(invoice.ratePerUnit)} / unit (${invoice.rateSource.replaceAll('_', ' ').toLowerCase()})`],
-			['Solar energy charge', `INR ${this.money(invoice.solarAmount)}`],
+			['Solar energy charge', `INR ${this.money(invoice.solarAmount)}`]
+		);
+		if (invoice.electricityDutyApplicable) charges.push(
 			[`Electricity duty (${this.money(invoice.electricityDutyPercent)}%)`, `INR ${this.money(invoice.electricityDutyAmount)}`]
 		);
 		if (invoice.chargeType === 'SOLAR_PLUS_MSEB_BILL_AMOUNT') charges.push(['MSEB bill amount', `INR ${this.money(invoice.msebBillAmount)}`]);

@@ -73,9 +73,10 @@ public class EffectiveRate {
 	}
 
 	public void applyTariffCharges(BigDecimal fixedCharge, BigDecimal wheelingChargePerUnit,
-			BigDecimal taxOnSalePaisePerUnit) {
+			BigDecimal electricityDutyPercent, BigDecimal taxOnSalePaisePerUnit) {
 		this.fixedCharge = fixedCharge;
 		this.wheelingChargePerUnit = wheelingChargePerUnit;
+		this.electricityDutyPercent = electricityDutyPercent;
 		this.taxOnSalePaisePerUnit = taxOnSalePaisePerUnit;
 	}
 }

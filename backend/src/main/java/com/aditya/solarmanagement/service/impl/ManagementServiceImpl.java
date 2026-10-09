@@ -539,7 +539,7 @@ public class ManagementServiceImpl implements ManagementService {
 		EffectiveRate rate = new EffectiveRate(request.startDate(), request.ratePerUnit(), owner.company(), owner.branch(),
 				owner.msedclDetail());
 		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
-				request.taxOnSalePaisePerUnit());
+				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
 		EffectiveRate saved = effectiveRates.save(rate);
 		logger.info("Added effective rate id={} ownerType={} ownerId={}", saved.getId(), ownerType, ownerId);
 		return effectiveRateResponse(saved);
@@ -558,7 +558,7 @@ public class ManagementServiceImpl implements ManagementService {
 		}
 		rate.updateDetails(request.startDate(), request.ratePerUnit());
 		rate.applyTariffCharges(request.fixedCharge(), request.wheelingChargePerUnit(),
-				request.taxOnSalePaisePerUnit());
+				request.electricityDutyPercent(), request.taxOnSalePaisePerUnit());
 		logger.info("Updated effective rate id={} ownerType={} ownerId={}", rateId, ownerType, ownerId);
 		return effectiveRateResponse(rate);
 	}
@@ -717,7 +717,8 @@ public class ManagementServiceImpl implements ManagementService {
 
 	private EffectiveRateResponse effectiveRateResponse(EffectiveRate rate) {
 		return new EffectiveRateResponse(rate.getId(), rate.getStartDate(), rate.getRatePerUnit(),
-				rate.getFixedCharge(), rate.getWheelingChargePerUnit(), rate.getTaxOnSalePaisePerUnit());
+				rate.getFixedCharge(), rate.getWheelingChargePerUnit(), rate.getElectricityDutyPercent(),
+				rate.getTaxOnSalePaisePerUnit());
 	}
 
 	private record RateOwner(EffectiveRateOwnerType ownerType, Company company, Branch branch, MsedclDetail msedclDetail) {}

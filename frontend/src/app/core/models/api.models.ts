@@ -136,6 +136,8 @@ export interface MsedclDetailRecord {
   mobileNo: string;
   consumerNo: string;
   ratePerUnit: number;
+  electricityDutyApplicable: boolean;
+  electricityDutyPercent: number;
   lastInvoiceNo: string | null;
   dueDays: number;
   chargeType: MsedclChargeType;
@@ -151,6 +153,8 @@ export interface MsedclDetailPayload {
   mobileNo: string;
   consumerNo: string;
   ratePerUnit: number;
+  electricityDutyApplicable: boolean;
+  electricityDutyPercent: number;
   chargeType: MsedclChargeType;
   dueDays: number;
   referralId: number | null;
@@ -248,6 +252,7 @@ export interface MsedclInvoiceRecord {
   rateSource: string;
   configuredRatePerUnit: number;
   slabAverageRatePerUnit: number | null;
+  electricityDutyApplicable: boolean;
   electricityDutyPercent: number;
   electricityDutyAmount: number;
   solarAmount: number;
@@ -290,10 +295,12 @@ export interface InvoiceTariffBillDetails {
     ratePerUnit: number;
     adjustmentPerUnit: number;
     amount: number;
+    adjustmentAmount: number;
   }>;
   fixedCharge: number;
   wheelingChargePerUnit: number;
   wheelingAmount: number;
+  fuelAdjustmentAmount: number;
   electricityDutyPercent: number;
   electricityDutyAmount: number;
   taxOnSalePaisePerUnit: number;

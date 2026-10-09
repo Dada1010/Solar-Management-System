@@ -4,6 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record EffectiveRateResponse(Long id, LocalDate startDate, BigDecimal ratePerUnit,
-		BigDecimal fixedCharge, BigDecimal wheelingChargePerUnit,
+		BigDecimal fixedCharge, BigDecimal wheelingChargePerUnit, BigDecimal electricityDutyPercent,
 		BigDecimal taxOnSalePaisePerUnit) {
 }

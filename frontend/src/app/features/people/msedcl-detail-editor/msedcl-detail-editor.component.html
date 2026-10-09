@@ -4,6 +4,8 @@
 	<label>Mobile number<input pInputText type="tel" formControlName="mobileNo" maxlength="40"></label>
 	<label>Consumer number<input pInputText formControlName="consumerNo" maxlength="50"></label>
 	<label>Rate per unit<input pInputText type="number" min="0" step="0.0001" formControlName="ratePerUnit"></label>
+	<label class="duty-toggle"><input type="checkbox" formControlName="electricityDutyApplicable"> Electricity duty applicable</label>
+	<label *ngIf="form.controls.electricityDutyApplicable.value">Electricity duty (%)<input pInputText type="number" min="0" max="100" step="0.01" formControlName="electricityDutyPercent"></label>
 	<label>Due days<input pInputText type="number" min="0" max="365" step="1" formControlName="dueDays"></label>
 	<label>Charge type<select formControlName="chargeType"><option value="ONLY_SOLAR_GENERATION">Only Solar generation</option><option value="SOLAR_PLUS_MSEB_BILL_AMOUNT">Solar + MSEB bill amount</option></select></label>
 	<label>Referral<select formControlName="referralId"><option [ngValue]="null">No referral</option><option *ngFor="let referral of referrals" [ngValue]="referral.id">{{ referral.firstName }} {{ referral.lastName }} · {{ referral.referralPercentage | number:'1.2-2' }}%</option></select></label>

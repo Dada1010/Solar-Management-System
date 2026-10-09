@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+	<changeSet id="033-align-electricity-duty-booleans" author="aditya" dbms="mysql">
+		<modifyDataType tableName="customer_msedcl_details" columnName="electricity_duty_applicable" newDataType="BIT"/>
+		<modifyDataType tableName="msedcl_invoices" columnName="electricity_duty_applicable" newDataType="BIT"/>
+		<rollback>
+			<modifyDataType tableName="customer_msedcl_details" columnName="electricity_duty_applicable" newDataType="TINYINT(1)"/>
+			<modifyDataType tableName="msedcl_invoices" columnName="electricity_duty_applicable" newDataType="TINYINT(1)"/>
+		</rollback>
+	</changeSet>
+</databaseChangeLog>

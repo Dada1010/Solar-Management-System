@@ -242,7 +242,8 @@ export class EffectiveRateManagerComponent {
 	resetRateForm(): void {
 		this.editingRateId = null;
 		this.rateForm.reset({ startDate: '', ratePerUnit: 0, fixedCharge: 0, wheelingChargePerUnit: 0,
-			electricityDutyPercent: 0, taxOnSalePaisePerUnit: 0 });
+			electricityDutyPercent: 0,
+			taxOnSalePaisePerUnit: 0 });
 	}
 
 	resetSlabForm(): void {

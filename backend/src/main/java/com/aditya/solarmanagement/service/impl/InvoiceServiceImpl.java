@@ -419,7 +419,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 			BigDecimal netGridUnits = importConsumption.subtract(solarOffsetUnits);
 			TariffBillDetails withoutSolar = tariffBill(tariff, slabSchedule.getSlabs(), totalUnits);
 			boolean gridAmountEntered = detail.getChargeType() == MsedclChargeType.SOLAR_PLUS_MSEB_BILL_AMOUNT;
-			TariffBillDetails withSolarGrid = gridAmountEntered ? null : tariffBill(tariff, slabSchedule.getSlabs(), netGridUnits);
+			TariffBillDetails withSolarGrid = gridAmountEntered ? null
+					: tariffBill(tariff, slabSchedule.getSlabs(), netGridUnits);
 			BigDecimal gridAmount = gridAmountEntered ? msebBillAmount : withSolarGrid.totalAmount();
 			BigDecimal withSolar = gridAmount.add(solarAmount).add(electricityDutyAmount).setScale(2, RoundingMode.HALF_UP);
 			BigDecimal savings = withoutSolar.totalAmount().subtract(withSolar);
@@ -493,37 +494,38 @@ public class InvoiceServiceImpl implements InvoiceService {
 		return InvoiceRateCalculator.weightedSlabRate(specs, units);
 	}
 
-	// Electricity duty is applied on energy, adjustment and wheeling charges, not on the fixed charge.
 	private TariffBillDetails tariffBill(EffectiveRate tariff, List<EffectiveSlab> slabs, BigDecimal units) {
 		BigDecimal billedUnits = units.max(BigDecimal.ZERO);
 		BigDecimal remaining = billedUnits;
 		BigDecimal from = BigDecimal.ZERO;
 		BigDecimal bandTotal = BigDecimal.ZERO;
+		BigDecimal fuelAdjustment = BigDecimal.ZERO.setScale(2);
 		List<TariffBand> bands = new ArrayList<>();
 		for (EffectiveSlab slab : slabs) {
 			if (remaining.signum() <= 0) break;
 			BigDecimal band = slab.getUpToUnits() == null ? remaining : remaining.min(slab.getUpToUnits().subtract(from));
-			BigDecimal amount = band.multiply(slab.getRatePerUnit().add(slab.getAdjustmentPerUnit()))
+			BigDecimal amount = band.multiply(slab.getRatePerUnit())
 					.setScale(2, RoundingMode.HALF_UP);
+			BigDecimal adjustmentAmount = InvoiceRateCalculator.fuelAdjustment(band, slab.getAdjustmentPerUnit());
 			bands.add(new TariffBand(from, slab.getUpToUnits(), band, slab.getRatePerUnit(),
-					slab.getAdjustmentPerUnit(), amount));
+					slab.getAdjustmentPerUnit(), amount, adjustmentAmount));
 			bandTotal = bandTotal.add(amount);
+			fuelAdjustment = fuelAdjustment.add(adjustmentAmount);
 			remaining = remaining.subtract(band);
 			if (slab.getUpToUnits() != null) from = slab.getUpToUnits();
 		}
 		BigDecimal wheelingRate = tariff == null ? BigDecimal.ZERO : tariff.getWheelingChargePerUnit();
-		BigDecimal dutyPercent = tariff == null ? BigDecimal.ZERO : tariff.getElectricityDutyPercent();
+		BigDecimal electricityDutyPercent = tariff == null ? BigDecimal.ZERO : tariff.getElectricityDutyPercent();
 		BigDecimal taxRate = tariff == null ? BigDecimal.ZERO : tariff.getTaxOnSalePaisePerUnit();
 		BigDecimal wheeling = billedUnits.multiply(wheelingRate).setScale(2, RoundingMode.HALF_UP);
-		BigDecimal dutyBase = bandTotal.add(wheeling);
-		BigDecimal duty = dutyBase.multiply(dutyPercent)
-				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+		BigDecimal fixed = tariff == null ? BigDecimal.ZERO.setScale(2) : tariff.getFixedCharge().setScale(2, RoundingMode.HALF_UP);
+		BigDecimal dutyBase = InvoiceRateCalculator.tariffDutyBase(fixed, bandTotal, wheeling, fuelAdjustment);
+		BigDecimal duty = InvoiceRateCalculator.electricityDuty(dutyBase, electricityDutyPercent);
 		BigDecimal taxOnSale = billedUnits.multiply(taxRate)
 				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-		BigDecimal fixed = tariff == null ? BigDecimal.ZERO.setScale(2) : tariff.getFixedCharge().setScale(2, RoundingMode.HALF_UP);
-		BigDecimal total = fixed.add(dutyBase).add(duty).add(taxOnSale).setScale(2, RoundingMode.HALF_UP);
-		return new TariffBillDetails(billedUnits, bands, fixed, wheelingRate, wheeling,
-				dutyPercent, duty, taxRate, taxOnSale, total);
+		BigDecimal total = dutyBase.add(duty).add(taxOnSale).setScale(2, RoundingMode.HALF_UP);
+		return new TariffBillDetails(billedUnits, bands, fixed, wheelingRate, wheeling, fuelAdjustment,
+				electricityDutyPercent, duty, taxRate, taxOnSale, total);
 	}
 
 	private ResolvedRate resolveRate(MsedclDetail detail, LocalDate billingDate) {

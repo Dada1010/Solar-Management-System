@@ -24,6 +24,8 @@ export class MsedclDetailEditorComponent implements OnInit, OnChanges {
 		mobileNo: ['', Validators.required],
 		consumerNo: ['', Validators.required],
 		ratePerUnit: [0, [Validators.required, Validators.min(0)]],
+		electricityDutyApplicable: [false],
+		electricityDutyPercent: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
 		dueDays: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
 		chargeType: this.formBuilder.nonNullable.control<MsedclChargeType>('ONLY_SOLAR_GENERATION', Validators.required),
 		referralId: this.formBuilder.control<number | null>(null)
@@ -47,7 +49,9 @@ export class MsedclDetailEditorComponent implements OnInit, OnChanges {
 			this.form.markAllAsTouched();
 			return;
 		}
-		this.saveDetail.emit(this.form.getRawValue());
+		const value = this.form.getRawValue();
+		this.saveDetail.emit({ ...value,
+			electricityDutyPercent: value.electricityDutyApplicable ? value.electricityDutyPercent : 0 });
 	}
 
 	cancel(): void {
@@ -61,6 +65,8 @@ export class MsedclDetailEditorComponent implements OnInit, OnChanges {
 			mobileNo: this.detail?.mobileNo ?? '',
 			consumerNo: this.detail?.consumerNo ?? '',
 			ratePerUnit: this.detail?.ratePerUnit ?? 0,
+			electricityDutyApplicable: this.detail?.electricityDutyApplicable ?? false,
+			electricityDutyPercent: this.detail?.electricityDutyPercent ?? 0,
 			dueDays: this.detail?.dueDays ?? 0,
 			chargeType: this.detail?.chargeType ?? 'ONLY_SOLAR_GENERATION',
 			referralId: this.detail?.referralId ?? null

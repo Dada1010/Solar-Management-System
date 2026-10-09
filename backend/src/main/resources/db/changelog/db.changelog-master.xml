@@ -35,4 +35,5 @@
 	<include file="db/changelog/changes/030-separate-effective-slab-schedules.xml"/>
 	<include file="db/changelog/changes/031-add-invoice-rate-duty-snapshots.xml"/>
 	<include file="db/changelog/changes/032-add-consumer-electricity-duty-settings.xml"/>
+	<include file="db/changelog/changes/033-align-electricity-duty-booleans.xml"/>
 </databaseChangeLog>

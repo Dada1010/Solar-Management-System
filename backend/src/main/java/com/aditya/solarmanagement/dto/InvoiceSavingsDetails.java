@@ -20,11 +20,12 @@ public record InvoiceSavingsDetails(
 		BigDecimal electricityDutyAmount) {
 
 	public record TariffBand(BigDecimal fromUnits, BigDecimal upToUnits, BigDecimal units, BigDecimal ratePerUnit,
-			BigDecimal adjustmentPerUnit, BigDecimal amount) {
+			BigDecimal adjustmentPerUnit, BigDecimal amount, BigDecimal adjustmentAmount) {
 	}
 
 	public record TariffBillDetails(BigDecimal units, List<TariffBand> bands, BigDecimal fixedCharge,
-			BigDecimal wheelingChargePerUnit, BigDecimal wheelingAmount, BigDecimal electricityDutyPercent,
+			BigDecimal wheelingChargePerUnit, BigDecimal wheelingAmount, BigDecimal fuelAdjustmentAmount,
+			BigDecimal electricityDutyPercent,
 			BigDecimal electricityDutyAmount, BigDecimal taxOnSalePaisePerUnit, BigDecimal taxOnSaleAmount,
 			BigDecimal totalAmount) {
 	}

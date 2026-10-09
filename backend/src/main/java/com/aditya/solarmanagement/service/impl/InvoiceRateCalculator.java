@@ -37,4 +37,13 @@ final class InvoiceRateCalculator {
 	static BigDecimal electricityDuty(BigDecimal solarEnergyAmount, BigDecimal dutyPercent) {
 		return solarEnergyAmount.multiply(dutyPercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 	}
+
+	static BigDecimal fuelAdjustment(BigDecimal units, BigDecimal adjustmentPerUnit) {
+		return units.multiply(adjustmentPerUnit).setScale(2, RoundingMode.HALF_UP);
+	}
+
+	static BigDecimal tariffDutyBase(BigDecimal fixedCharge, BigDecimal energyAmount, BigDecimal wheelingAmount,
+			BigDecimal fuelAdjustmentAmount) {
+		return fixedCharge.add(energyAmount).add(wheelingAmount).add(fuelAdjustmentAmount);
+	}
 }
